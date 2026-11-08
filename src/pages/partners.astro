@@ -1,6 +1,7 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
 import PartnerForm from '../components/PartnerForm.astro';
+import FormSelects from '../components/FormSelects.astro';
 
 export const prerender = false;
 
@@ -26,7 +27,7 @@ const ways = [
   <section class="partner-intro reveal">
     <div class="container">
       <span class="eyebrow eyebrow--accent">For The Travel Trade</span>
-      <h2>Let's Work Together</h2>
+      <h2>Let's Work <span class="gold">Together</span></h2>
       <p>Altara designs every Bhutan journey by hand, around one traveler or family at a time. If you share that care,
         we would like to hear from you &mdash; whether you send travelers, host them, or help us look after them.</p>
       <div class="partner-ways">
@@ -44,11 +45,12 @@ const ways = [
     <div class="container">
       <div class="partner-form-card">
         <span class="eyebrow eyebrow--accent">Send A Proposal</span>
-        <h2>Tell Us About Your Business</h2>
+        <h2>Tell Us About Your <span class="gold">Business</span></h2>
         <p class="enquire-form-lede">Our partnerships team reads every proposal personally and replies within three
           business days. Planning your own trip instead? <a href="/enquire">Enquire here</a>.</p>
         <PartnerForm />
       </div>
     </div>
   </section>
+  <FormSelects />
 </SiteLayout>

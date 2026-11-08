@@ -24,26 +24,27 @@ const posts = await getPublishedPosts(6);
   </section>
 
   <!-- ================= ABOUT ================= -->
-  <section class="about reveal" id="story">
+  <section class="about about--feature reveal" id="story">
     <div class="container">
       <div class="about-media">
         <div class="about-media-main">
           <img src="/assets/images/image/Mongar 100723 by Nantawat-1.webp"
             alt="A traveler's view across the hills of Mongar, Bhutan">
+          <p class="about-media-caption">Private Journeys<br>Made By Hand</p>
         </div>
         <div class="about-media-accent">
           <img src="/assets/images/image/khoma1.webp" alt="Traditional weaving detail from Khoma, Bhutan">
         </div>
       </div>
       <div class="about-copy">
-        <span class="eyebrow eyebrow--accent">About Us</span>
-        <h2>Travel As<br>Transformation</h2>
+        <span class="eyebrow">Why Choose Altara?</span>
+        <h2><span class="gold">Private Journeys</span> Through<br>The Last Himalayan<br><span class="gold">Kingdom</span></h2>
         <p>Altara is a private-journey house built around the Kingdom of Bhutan, dedicated to crafting considered,
           unhurried travel through the last Himalayan kingdom.</p>
         <p>Every itinerary we build is private and shaped around a single traveler or family — never a coach, never a
           script. We work only with a small circle of guides, drivers, and homes we trust completely, so each journey
           feels less like a tour and more like <em>time given back to you</em>.</p>
-        <a href="/about" class="about-link">Read More <span class="arrow">→</span></a>
+        <a href="/about" class="btn btn-solid-gold">Read More</a>
       </div>
     </div>
   </section>
@@ -52,9 +53,10 @@ const posts = await getPublishedPosts(6);
   <section class="explore-trips reveal" id="journeys">
     <div class="explore-inner">
       <div class="explore-left">
-        <span class="eyebrow eyebrow--on-dark">Plan Your Trip</span>
-        <h2>Explore Our<br>Experiences</h2>
-        <p class="explore-subtitle">Choose the kind of journey that calls to you</p>
+        <span class="eyebrow eyebrow--accent">Plan Your Trip</span>
+        <h2>Explore Our <span class="gold">Experiences</span></h2>
+        <p class="explore-subtitle">Choose the kind of journey that calls to you.</p>
+        <p class="explore-subtitle">From high-Himalayan treks to quiet monastery villages, festivals and private luxury stays — every route is designed around you.</p>
       </div>
       <div class="explore-slider">
         <button class="slider-arrow prev" id="journeyPrev" aria-label="Previous experiences" disabled>
@@ -67,8 +69,9 @@ const posts = await getPublishedPosts(6);
           <a href="/trekking-tours" class="journey-card"
             style="background-image:url('/assets/images/image/Haa by Marcus Westberg37.webp');">
             <div class="bg" style="background-image:url('/assets/images/image/Haa by Marcus Westberg37.webp');"></div>
-            <span class="journey-nights">6 Packages</span>
+            <span class="journey-num">01</span>
             <div class="journey-info">
+              <span class="journey-nights">6 Packages</span>
               <h3 class="journey-title">Trekking Tours</h3>
               <span class="journey-btn">Explore Tours</span>
             </div>
@@ -76,8 +79,9 @@ const posts = await getPublishedPosts(6);
           <a href="/cultural-tours" class="journey-card"
             style="background-image:url('/assets/images/image/03 - Kila Goenpa-7.webp');">
             <div class="bg" style="background-image:url('/assets/images/image/03 - Kila Goenpa-7.webp');"></div>
-            <span class="journey-nights">6 Packages</span>
+            <span class="journey-num">02</span>
             <div class="journey-info">
+              <span class="journey-nights">6 Packages</span>
               <h3 class="journey-title">Cultural Tours</h3>
               <span class="journey-btn">Explore Tours</span>
             </div>
@@ -85,16 +89,18 @@ const posts = await getPublishedPosts(6);
           <a href="/festival-tours" class="journey-card"
             style="background-image:url('/assets/images/image/Jhomolhari Festival-1.webp');">
             <div class="bg" style="background-image:url('/assets/images/image/Jhomolhari Festival-1.webp');"></div>
-            <span class="journey-nights">6 Festivals</span>
+            <span class="journey-num">03</span>
             <div class="journey-info">
+              <span class="journey-nights">6 Festivals</span>
               <h3 class="journey-title">Festival Tours</h3>
               <span class="journey-btn">Explore Tours</span>
             </div>
           </a>
           <a href="/luxury-tours" class="journey-card" style="background-image:url('/assets/images/image/LLL05108.webp');">
             <div class="bg" style="background-image:url('/assets/images/image/LLL05108.webp');"></div>
-            <span class="journey-nights">6 Journeys</span>
+            <span class="journey-num">04</span>
             <div class="journey-info">
+              <span class="journey-nights">6 Journeys</span>
               <h3 class="journey-title">Luxury Tours</h3>
               <span class="journey-btn">Explore Tours</span>
             </div>
@@ -106,6 +112,11 @@ const posts = await getPublishedPosts(6);
             <path d="M9 18l6-6-6-6" />
           </svg>
         </button>
+        <div class="journey-progress" id="journeyProgress" hidden>
+          <span class="journey-progress-count" id="journeyCurrent">01</span>
+          <span class="journey-progress-bar"><i id="journeyFill"></i></span>
+          <span class="journey-progress-count" id="journeyTotal">04</span>
+        </div>
       </div>
     </div>
   </section>
@@ -210,7 +221,7 @@ const posts = await getPublishedPosts(6);
       <div class="container">
         <div class="explore-bhutan-header">
           <span class="eyebrow eyebrow--accent">Routes Into The Kingdom</span>
-          <h2>Getting Into Bhutan</h2>
+          <h2>Getting Into <span class="gold">Bhutan</span></h2>
           <p class="explore-bhutan-subtitle">Fly into Paro, Bhutan's only international airport, or cross by road at one
             of three border gates. Hover the map to discover where a private Altara journey can take you.</p>
         </div>
@@ -274,56 +285,13 @@ const posts = await getPublishedPosts(6);
     </section>
   </div><!-- /bhutan-scroll-pin -->
 
-  <!-- ================= WHY US ================= -->
-  <section class="why-us reveal" id="why">
-    <div class="container why-layout">
-      <div class="why-head">
-        <span class="eyebrow eyebrow--accent">Why Altara</span>
-        <h2>A Different Kind Of Kingdom Guide</h2>
-        <p class="lead">We are a small team, based in Bhutan, working only in Bhutan. That focus is deliberate — it
-          means every relationship, every route, every recommendation is earned firsthand.</p>
-        <a href="/about" class="why-link">Read Our Story <span class="arrow">→</span></a>
-      </div>
-      <div class="why-grid">
-        <div class="why-reason">
-          <div class="why-reason-head">
-            <span class="why-reason-num">01</span>
-            <h3>Fully Private Journeys</h3>
-          </div>
-          <p>No group departures, ever — every itinerary is built around one traveling party, start to finish.</p>
-        </div>
-        <div class="why-reason">
-          <div class="why-reason-head">
-            <span class="why-reason-num">02</span>
-            <h3>Guides From The Villages You'll Visit</h3>
-          </div>
-          <p>Not contracted freelancers — people with a genuine stake in the places they're showing you.</p>
-        </div>
-        <div class="why-reason">
-          <div class="why-reason-head">
-            <span class="why-reason-num">03</span>
-            <h3>Access Beyond The Guidebook</h3>
-          </div>
-          <p>Monasteries, homes and rituals closed to the public, opened through relationships earned firsthand.</p>
-        </div>
-        <div class="why-reason">
-          <div class="why-reason-head">
-            <span class="why-reason-num">04</span>
-            <h3>A Pace Designed Around You</h3>
-          </div>
-          <p>One dedicated planner from first call to final farewell — no fixed itinerary, no rush.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- ================= BLOG ================= -->
   <section class="blog reveal" id="blog">
     <div class="container">
       <div class="blog-head">
         <div>
           <span class="eyebrow eyebrow--accent">From The Journal</span>
-          <h2>Notes From The Kingdom</h2>
+          <h2>Notes From The <span class="gold">Kingdom</span></h2>
           <p class="blog-subtitle">Stories, festival dates and travel tips from the people who live and guide
             here.</p>
         </div>
@@ -366,7 +334,7 @@ const posts = await getPublishedPosts(6);
     <div class="container">
       <div class="partners-head">
         <span class="eyebrow eyebrow--accent">Trusted Together</span>
-        <h2>Our Partners &amp; Affiliates</h2>
+        <h2>Our Partners &amp; <span class="gold">Affiliates</span></h2>
       </div>
     </div>
     <div class="partners-track-wrap">
@@ -425,7 +393,7 @@ const posts = await getPublishedPosts(6);
   <section class="faq reveal" id="faq">
     <div class="container">
       <div class="faq-head">
-        <h2>Frequently Asked<br>Questions</h2>
+        <h2>Frequently Asked<br><span class="gold">Questions</span></h2>
         <a href="/faq" class="btn btn-outline-green">View All FAQs</a>
       </div>
       <div class="faq-columns">
@@ -507,7 +475,7 @@ const posts = await getPublishedPosts(6);
   <section class="dark-cta dark-cta--photo reveal" id="enquire"
     style="background-image:url('/assets/images/image/buddha point.webp');">
     <div class="dark-cta-inner">
-      <h2>Begin Your Story</h2>
+      <h2>Begin Your <span class="gold">Story</span></h2>
       <p>Every great journey begins with a single conversation. Speak with one of our specialists to craft an entirely
         bespoke experience tailored to your vision, your pace, your dream.</p>
       <div class="dark-cta-ctas">
@@ -519,15 +487,39 @@ const posts = await getPublishedPosts(6);
           </svg>
           <span>WhatsApp Us</span>
         </a>
-        <a href="mailto:hello@altara.travel" class="contact-pill">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-            stroke-linejoin="round">
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <path d="M3 7l9 6 9-6" />
+        <a href="/enquire" class="contact-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12h16M14 6l6 6-6 6"></path>
           </svg>
-          <span>Mail Us</span>
+          <span>Contact Us</span>
         </a>
       </div>
     </div>
   </section>
 </SiteLayout>
+
+<script>
+  // Progress bar under the Explore slider: shows which cards are in view as the track scrolls.
+  const track = document.getElementById('journeyTrack');
+  const wrap = document.getElementById('journeyProgress');
+  const fill = document.getElementById('journeyFill');
+  const cur = document.getElementById('journeyCurrent');
+  const total = document.getElementById('journeyTotal');
+  if (track && wrap && fill && cur && total) {
+    const cards = track.children.length;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    total.textContent = pad(cards);
+    wrap.hidden = false;
+    const update = () => {
+      const max = track.scrollWidth - track.clientWidth;
+      const visible = Math.max(1, Math.min(cards, Math.round((track.clientWidth / track.scrollWidth) * cards)));
+      const pos = max > 0 ? track.scrollLeft / max : 0;
+      fill.style.width = `${(visible / cards) * 100}%`;
+      fill.style.left = `${pos * (1 - visible / cards) * 100}%`;
+      cur.textContent = pad(Math.min(cards, Math.round(pos * (cards - visible)) + 1));
+    };
+    track.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  }
+</script>

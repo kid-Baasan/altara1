@@ -168,7 +168,7 @@ const sectionNav = [
         <div class="container">
           <div class="itinerary-head">
             <span class="eyebrow eyebrow--accent">Day By Day</span>
-            <h2>The Itinerary</h2>
+            <h2>The <span class="gold">Itinerary</span></h2>
           </div>
           <div class="itinerary-list">
             {tour.itinerary.map((day) => (
@@ -241,7 +241,7 @@ const sectionNav = [
         <div class="container">
           <div class="tour-map-head">
             <span class="eyebrow eyebrow--accent">Where You'll Go</span>
-            <h2>Districts On This Tour</h2>
+            <h2>Districts On This <span class="gold">Tour</span></h2>
           </div>
           <div class="tour-map-card">
             <TourMap active={tour.districts} />
@@ -260,7 +260,7 @@ const sectionNav = [
       <section class="tour-content reveal" id="inclusions">
         <div class="container">
           <div class="tour-content-inner">
-            <h2>Included / Excluded In The Cost</h2>
+            <h2>Included / Excluded In The <span class="gold">Cost</span></h2>
             <div class="tour-cost-columns">
               <div>
                 <h3 class="tour-detail-subhead">Trip Cost Includes</h3>
@@ -312,7 +312,7 @@ const sectionNav = [
         <div class="container">
           <div class="itinerary-head">
             <span class="eyebrow eyebrow--accent">Good To Know</span>
-            <h2>Frequently Asked Questions</h2>
+            <h2>Frequently Asked <span class="gold">Questions</span></h2>
           </div>
           <div class="itinerary-list">
             {tour.faqs.map((faq) => (
@@ -400,7 +400,7 @@ const sectionNav = [
       <section class="tour-related reveal">
         <div class="container">
           <div class="tour-related-head">
-            <h2>Related Tours</h2>
+            <h2>Related <span class="gold">Tours</span></h2>
             <p>{cat.related_lede}</p>
           </div>
           <div class="tour-related-track-wrap">

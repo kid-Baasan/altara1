@@ -320,11 +320,11 @@
 
   /* Full-screen mobile nav panel, slid in from the right. Sits just below
      the header's own z-index so the hamburger (now an ×) stays clickable
-     on top of it to close. */
+     on top of it to close. Above the tour pages' sticky section bar (z-index 900) so that never overlaps the menu. */
   .mobile-nav{
     position:fixed;
     inset:0;
-    z-index:900;
+    z-index:950;
     background:var(--color-primary-dark);
     display:flex;
     flex-direction:column;
@@ -684,7 +684,7 @@
   .team-avatar{
     width:100%;
     aspect-ratio:1/1;
-    border-radius:50%;
+    border-radius:0;
     background:linear-gradient(155deg, var(--color-primary-dark), var(--color-black-green));
     display:flex;
     align-items:center;
@@ -701,7 +701,7 @@
     position:absolute;
     inset:0;
     border:1px solid rgba(176,141,87,0.5);
-    border-radius:50%;
+    border-radius:0;
   }
   .team-initials{
     font-family:var(--font-display);
@@ -1249,50 +1249,25 @@
      was removed from the homepage on request — don't recreate it from
      memory. */
 
-  /* ================= EXPLORE TRIPS SLIDER ================= */
+  /* ================= EXPLORE TRIPS SLIDER =================
+     Light section: heading + intro on the left, tall numbered photo cards on the right, square prev/next arrows
+     to the left of the cards and a thin progress bar underneath. */
   .explore-trips{
     position:relative;
-    background:var(--color-black-green);
-    padding:40px 0;
+    background:var(--color-white);
+    padding:90px 0 80px;
     overflow:hidden;
   }
-  .explore-trips::before{
-    content:"";
-    position:absolute;
-    inset:-20px;
-    background:url('assets/images/image/Thimphu Attractions Header.webp') center/cover no-repeat;
-    filter:blur(10px) brightness(0.45) saturate(0.9);
-    transform:scale(1.08);
-    z-index:0;
-  }
-  .explore-trips::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:linear-gradient(to right, rgba(14,21,18,0.8) 0%, rgba(14,21,18,0.5) 30%, rgba(14,21,18,0.2) 55%);
-    z-index:1;
-  }
   .explore-inner{
-    position:relative;
-    z-index:2;
     display:flex;
     align-items:center;
-    gap:50px;
-    padding-left:60px;
+    gap:100px;
+    padding-left:70px;
   }
-  .explore-left{
-    flex:0 0 320px;
-  }
-  .explore-left h2{color:var(--color-white);}
-  .explore-left .explore-subtitle{
-    font-family:var(--font-italic);
-    font-style:italic;
-    font-size:18px;
-    color:#D9D3C3;
-    max-width:280px;
-    line-height:1.5;
-    margin-top:18px;
-  }
+  .explore-left{flex:0 0 320px;}
+  .explore-left h2{margin:14px 0 26px;line-height:1.02;}
+  .explore-left h2 .gold{color:var(--color-accent-gold);}
+  .explore-left .explore-subtitle{max-width:340px;line-height:1.9;margin:0 0 18px;}
   .explore-slider{
     position:relative;
     flex:1;
@@ -1300,19 +1275,19 @@
   }
   .journey-track{
     display:flex;
-    gap:18px;
+    gap:15px;
     overflow-x:auto;
     scroll-snap-type:x mandatory;
     scroll-behavior:smooth;
-    padding:6px 2px 10px;
+    padding:0;
     -ms-overflow-style:none;
     scrollbar-width:none;
   }
   .journey-track::-webkit-scrollbar{display:none;}
   .journey-card{
     position:relative;
-    flex:0 0 340px;
-    height:600px;
+    flex:0 0 290px;
+    height:540px;
     overflow:hidden;
     scroll-snap-align:start;
     background-size:cover;
@@ -1328,44 +1303,41 @@
   .journey-card::after{
     content:"";
     position:absolute;inset:0;
-    background:linear-gradient(to top, rgba(14,21,18,0.85) 0%, rgba(14,21,18,0) 38%);
+    background:linear-gradient(to top, rgba(14,21,18,0.8) 0%, rgba(14,21,18,0) 45%);
   }
-  .journey-nights{
+  .journey-num{
     position:absolute;
-    top:20px;right:20px;
+    top:22px;left:22px;
     z-index:2;
-    background:rgba(14,21,18,0.55);
-    padding:8px 14px;
     font-size:11px;
     font-weight:700;
-    letter-spacing:0.16em;
-    text-transform:uppercase;
+    letter-spacing:0.2em;
     color:var(--color-white);
   }
   .journey-info{
     position:absolute;
     left:0;right:0;bottom:0;
     z-index:2;
-    padding:28px;
+    padding:28px 26px;
   }
-  .journey-country{
+  .journey-nights{
     display:block;
-    font-size:11px;
+    font-size:10px;
     font-weight:700;
     letter-spacing:0.2em;
     text-transform:uppercase;
     color:var(--color-accent-gold);
-    margin-bottom:10px;
+    margin-bottom:8px;
   }
   .journey-title{
-    font-family:var(--font-body);
-    font-weight:700;
-    font-size:14px;
-    letter-spacing:1px;
+    font-family:var(--font-display);
+    font-weight:400;
+    font-size:30px;
+    letter-spacing:0.5px;
     text-transform:uppercase;
-    line-height:1.35;
+    line-height:1.05;
     color:var(--color-white);
-    margin-bottom:10px;
+    margin-bottom:14px;
   }
   .journey-btn{
     display:inline-block;
@@ -1375,12 +1347,17 @@
     letter-spacing:1.2px;
     text-transform:uppercase;
     color:var(--color-white);
-    background:rgba(14,21,18,0.35);
-    border:1px solid rgba(255,255,255,0.6);
-    padding:10px 20px;
-    transition:background .3s var(--ease), color .3s var(--ease), border-color .3s var(--ease);
+    border-bottom:1px solid rgba(255,255,255,0.6);
+    padding-bottom:4px;
+    transition:color .3s var(--ease), border-color .3s var(--ease);
   }
-  .journey-btn:hover{background:var(--color-white);color:var(--color-primary-dark);border-color:var(--color-white);}
+  .journey-card:hover .journey-btn{color:var(--color-accent-gold);border-color:var(--color-accent-gold);}
+
+  /* Progress under the cards (revealed by a small script; hidden without JS) */
+  .journey-progress{display:flex;align-items:center;gap:16px;margin-top:26px;font-size:11px;letter-spacing:0.12em;color:var(--color-gray-muted);}
+  .journey-progress[hidden]{display:none;}
+  .journey-progress-bar{flex:1;max-width:620px;height:2px;background:#E4E1D8;position:relative;}
+  .journey-progress-bar i{position:absolute;left:0;top:0;height:100%;width:25%;background:var(--color-accent-gold);transition:left .35s var(--ease),width .35s var(--ease);}
 
   .slider-arrow{
     position:absolute;
@@ -1398,7 +1375,12 @@
     transition:background .3s var(--ease), opacity .3s var(--ease);
   }
   .slider-arrow:hover{background:var(--color-accent-gold);border-color:var(--color-accent-gold);}
-  #journeyPrev, #journeyNext{border-radius:0;}
+  #journeyPrev, #journeyNext{border-radius:0;width:48px;height:48px;top:auto;transform:none;left:-64px;border:0;}
+  #journeyPrev{bottom:100px;background:var(--color-primary-dark);}
+  #journeyNext{bottom:44px;right:auto;background:var(--color-primary-dark);}
+  #journeyPrev:hover,#journeyNext:hover{background:var(--color-accent-gold);}
+  /* At either end of the slider the arrow stays visible, just dulled to grey and not clickable. */
+  #journeyPrev[disabled],#journeyNext[disabled]{opacity:1;background:#A9B0B2;pointer-events:none;cursor:default;}
   #activityPrev, #activityNext{border-radius:0;}
   .slider-arrow svg{width:18px;height:18px;}
   .slider-arrow.prev{left:-8px;}
@@ -1409,6 +1391,9 @@
     .explore-inner{flex-direction:column;align-items:flex-start;gap:36px;padding-left:26px;}
     .explore-left{flex:none;}
     .journey-card{flex:0 0 240px;height:460px;}
+    #journeyPrev,#journeyNext{left:auto;right:12px;top:auto;bottom:70px;width:44px;height:44px;}
+    #journeyPrev{right:64px;}
+    #journeyNext{bottom:70px;}
     /* Arrows stay visible + clickable on mobile too (not touch-only) —
        don't hide .slider-arrow here. */
   }
@@ -1878,10 +1863,11 @@
   }
   .blog-arrows{display:flex;gap:12px;}
   .blog-arrows .slider-arrow{position:static;transform:none;}
-  #blogPrev, #blogNext{border-radius:0;background:rgba(14,21,18,0.06);border-color:var(--color-rule);}
-  #blogPrev svg, #blogNext svg{color:var(--color-primary-dark);}
-  #blogPrev:hover, #blogNext:hover{background:var(--color-accent-gold);border-color:var(--color-accent-gold);}
-  #blogPrev:hover svg, #blogNext:hover svg{color:var(--color-white);}
+  /* Same arrows as the Experiences slider: square, dark green; both always visible, dull grey at either end. */
+  #blogPrev, #blogNext{border-radius:0;width:48px;height:48px;border:0;background:var(--color-primary-dark);}
+  #blogPrev svg, #blogNext svg{color:var(--color-white);}
+  #blogPrev:hover, #blogNext:hover{background:var(--color-accent-gold);}
+  #blogPrev[disabled], #blogNext[disabled]{opacity:1;background:#A9B0B2;pointer-events:none;cursor:default;}
 
   .blog-slider{position:relative;}
   .blog-track{
@@ -3766,3 +3752,112 @@
 .partner-form-card h2{margin:10px 0 0;}
 @media(min-width:700px){.partner-form-card{padding:64px 56px;}}
 /* ===================== /CONTACT FORM + PARTNERS ===================== */
+
+/* ===================== ENQUIRE DESK (redesign) =====================
+   Dark info panel on the left, tabbed form card on the right. Tabs are radio inputs + CSS (no JavaScript);
+   the page picks the trade tab server-side after a trade submission or with /enquire?type=trade. */
+.desk{background:var(--color-offwhite);padding:110px 0 40px;}
+.desk-grid{display:grid;grid-template-columns:1fr;box-shadow:0 30px 70px rgba(14,21,18,.12);}
+.desk-side{background:var(--color-black-green);color:rgba(255,255,255,.78);padding:56px 28px;}
+.desk-side h2{color:#fff;margin:14px 0 20px;}
+.eyebrow--light{color:var(--color-accent-gold);}
+.desk-side-lede{font-size:14px;line-height:1.85;max-width:380px;}
+.desk-promises{margin:36px 0;display:grid;gap:22px;}
+.desk-promises li{border-left:2px solid var(--color-accent-gold);padding-left:18px;display:grid;gap:4px;}
+.desk-promises strong{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#fff;font-weight:700;}
+.desk-promises span{font-size:13px;line-height:1.7;}
+.desk-planner{display:flex;align-items:center;gap:16px;padding:20px 0;border-top:1px solid rgba(255,255,255,.14);border-bottom:1px solid rgba(255,255,255,.14);}
+.desk-planner .team-avatar{width:52px;max-width:52px;margin:0;flex:none;}
+.desk-planner .team-initials{font-size:18px;}
+.desk-planner .enquire-planner-name{color:#fff;}
+.desk-contact{margin-top:26px;display:grid;gap:16px;font-size:14px;}
+.desk-contact li{display:grid;gap:3px;}
+.desk-contact-label{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--color-accent-gold);}
+.desk-contact a{color:#fff;border-bottom:1px solid rgba(255,255,255,.3);justify-self:start;transition:border-color .25s;}
+.desk-contact a:hover{border-color:var(--color-accent-gold);}
+
+.desk-card{background:#fff;padding:36px 22px 48px;}
+.desk-radio{position:absolute;opacity:0;pointer-events:none;}
+.desk-tabs{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--color-rule);margin-bottom:34px;}
+.desk-tabs label{cursor:pointer;display:grid;gap:3px;padding:16px 14px;text-align:center;transition:background .25s,color .25s;}
+.desk-tabs label+label{border-left:1px solid var(--color-rule);}
+.desk-tabs label span{font-family:var(--font-display);font-size:22px;letter-spacing:.04em;text-transform:uppercase;color:var(--color-primary-dark);}
+.desk-tabs label small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-gray-muted);}
+.desk-tabs label:hover{background:var(--color-offwhite);}
+#desk-tab-trip:checked ~ .desk-tabs label[for="desk-tab-trip"],
+#desk-tab-trade:checked ~ .desk-tabs label[for="desk-tab-trade"]{background:var(--color-primary-dark);}
+#desk-tab-trip:checked ~ .desk-tabs label[for="desk-tab-trip"] span,
+#desk-tab-trade:checked ~ .desk-tabs label[for="desk-tab-trade"] span{color:#fff;}
+#desk-tab-trip:checked ~ .desk-tabs label[for="desk-tab-trip"] small,
+#desk-tab-trade:checked ~ .desk-tabs label[for="desk-tab-trade"] small{color:var(--color-accent-gold);}
+#desk-tab-trip:focus-visible ~ .desk-tabs label[for="desk-tab-trip"],
+#desk-tab-trade:focus-visible ~ .desk-tabs label[for="desk-tab-trade"]{outline:2px solid var(--color-accent-gold);outline-offset:-4px;}
+.desk-panel{display:none;}
+#desk-tab-trip:checked ~ .desk-panel--trip,
+#desk-tab-trade:checked ~ .desk-panel--trade{display:block;}
+.desk-card .enquire-form-lede{max-width:none;margin:0 0 26px;}
+.desk-card .enquire-form-lede a{color:var(--color-accent-gold-deep);text-decoration:underline;text-underline-offset:3px;}
+.desk-card .form-row{display:grid;grid-template-columns:1fr;gap:0 20px;}
+@media(min-width:640px){.desk-card .form-row{grid-template-columns:1fr 1fr;}}
+@media(min-width:960px){
+  .desk-grid{grid-template-columns:.8fr 1.2fr;}
+  .desk-side{padding:72px 48px;}
+  .desk-card{padding:56px 56px 64px;}
+}
+@media(max-width:480px){.desk-tabs label span{font-size:19px;}.desk-tabs label small{letter-spacing:.08em;}}
+/* ===================== /ENQUIRE DESK ===================== */
+
+/* ===================== FORM DROPDOWN (custom select) =====================
+   Built by FormSelects.astro from native selects in .enquire-form--box; without JavaScript the native select shows. */
+.has-menu{position:relative;}
+.menu-native{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;bottom:0;left:0;}
+.menu-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;cursor:pointer;
+  background:#fff;border:1px solid var(--color-rule);border-radius:0;padding:14px 16px;font-family:var(--font-body);font-size:15px;
+  letter-spacing:.05em;color:var(--color-primary-dark);transition:border-color .25s,box-shadow .25s;}
+.menu-btn svg{width:18px;height:18px;flex:none;color:var(--color-accent-gold);transition:transform .25s var(--ease);}
+.menu-btn:hover{border-color:var(--color-accent-gold);}
+.menu-btn:focus-visible,.has-menu.is-open .menu-btn{outline:none;border-color:var(--color-accent-gold);box-shadow:0 0 0 3px rgba(176,141,87,.18);}
+.has-menu.is-open .menu-btn svg{transform:rotate(180deg);}
+.menu-list{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);max-height:280px;overflow-y:auto;background:#fff;
+  border:1px solid var(--color-accent-gold);box-shadow:0 24px 50px rgba(14,21,18,.16);padding:6px 0;margin:0;list-style:none;}
+.menu-list[hidden]{display:none;}
+.menu-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 18px;cursor:pointer;
+  font-size:14px;letter-spacing:.05em;color:var(--color-primary-dark);border-left:3px solid transparent;}
+.menu-list li svg{width:16px;height:16px;flex:none;color:var(--color-accent-gold);opacity:0;}
+.menu-list li.is-active{background:var(--color-offwhite);}
+.menu-list li.is-selected{border-left-color:var(--color-accent-gold);font-weight:700;}
+.menu-list li.is-selected svg{opacity:1;}
+/* ===================== /FORM DROPDOWN ===================== */
+
+/* ===================== ABOUT — FEATURE LAYOUT (home, about, about bhutan, festivals) =====================
+   Tall photo with a caption over it, a second portrait photo overlapping its lower-right corner, a faint map
+   watermark behind the copy, a two-tone headline and a solid gold button. Used with .about.about--feature. */
+.about--feature{position:relative;overflow:hidden;padding:130px 0 150px;}
+.about--feature .container{grid-template-columns:1fr 1fr;gap:80px;align-items:center;position:relative;z-index:1;}
+.about--feature .about-media{max-width:none;}
+.about--feature .about-media-main{width:75%;max-width:none;aspect-ratio:5/7;position:relative;}
+.about-media-main::before{content:"";position:absolute;inset:0 0 auto 0;height:34%;z-index:1;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(14,21,18,.55),rgba(14,21,18,0));}
+.about-media-caption{position:absolute;z-index:2;top:26px;left:26px;margin:0;font-family:var(--font-display);font-size:clamp(22px,2.4vw,32px);
+  line-height:1.05;letter-spacing:.03em;text-transform:uppercase;color:#fff;}
+.about--feature .about-media-accent{top:15.5%;bottom:auto;right:0;width:51%;aspect-ratio:3/3.9;border:0;box-shadow:0 30px 60px rgba(14,21,18,.22);}
+.about--feature .about-copy .eyebrow{color:var(--color-primary-dark);}
+.about--feature .about-copy h2{margin:18px 0 28px;line-height:1.02;}
+.about--feature .about-copy h2 .gold{color:var(--color-accent-gold);}
+.about--feature .about-copy .btn{margin-top:14px;}
+@media (max-width:1100px){.about--feature .container{gap:70px;}}
+@media (max-width:900px){
+  .about--feature{padding:90px 0 110px;}
+  .about--feature .container{grid-template-columns:1fr;gap:96px;}
+  .about--feature .about-media{max-width:440px;margin:0 auto;}
+    }
+/* ===================== /ABOUT — FEATURE LAYOUT ===================== */
+
+/* ===================== BRAND-COLOUR HEADINGS =====================
+   Gold accent words inside headings, as in the home About section (wrap the words in <span class="gold">). */
+h1 .gold,h2 .gold,h3 .gold{color:var(--color-accent-gold);}
+/* ===================== /BRAND-COLOUR HEADINGS ===================== */
+
+/* Mirrored feature layout (media on the right): big photo on the right, second photo overlapping its lower-left. */
+.about--feature.about--reverse .about-media-main{margin-left:auto;}
+.about--feature.about--reverse .about-media-accent{left:0;right:auto;}

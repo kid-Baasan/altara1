@@ -1,0 +1,160 @@
+---
+// Turns every <select> inside a boxed form (.enquire-form--box) into a styled dropdown (button + listbox).
+// The native <select> stays in the form as the source of truth, so the form works without JavaScript.
+---
+
+<script>
+  const CHEVRON =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  const CHECK =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+  type Sel = { value: string; selectedIndex: number; options: ArrayLike<{ value: string; textContent: string | null }> };
+  let openMenu: { close: () => void } | null = null;
+
+  document.querySelectorAll<HTMLElement>('.enquire-form--box select').forEach((el) => {
+    const select = el as unknown as HTMLElement & Sel;
+    const field = select.parentElement as HTMLElement;
+    const label = field.querySelector('label') as HTMLElement | null;
+    const options = Array.from(select.options as unknown as ArrayLike<{ value: string; textContent: string | null }>).map((o) => ({
+      value: o.value,
+      label: o.textContent ?? '',
+    }));
+    let index = Math.max(0, select.selectedIndex);
+
+    field.classList.add('has-menu');
+    select.classList.add('menu-native');
+    select.tabIndex = -1;
+    select.setAttribute('aria-hidden', 'true');
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'menu-btn';
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    if (label?.id) btn.setAttribute('aria-labelledby', label.id);
+    btn.innerHTML = `<span class="menu-value"></span>${CHEVRON}`;
+    const value = btn.querySelector('.menu-value') as HTMLElement;
+
+    const list = document.createElement('ul');
+    list.className = 'menu-list';
+    list.setAttribute('role', 'listbox');
+    list.tabIndex = -1;
+    list.hidden = true;
+    const items = options.map((o, i) => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.id = `${select.id}-opt-${i}`;
+      li.innerHTML = `<span>${o.label.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>${CHECK}`;
+      list.appendChild(li);
+      return li;
+    });
+    btn.setAttribute('aria-controls', list.id || (list.id = `${select.id}-list`));
+
+    field.insertBefore(btn, select);
+    field.insertBefore(list, select);
+    label?.addEventListener('click', (e) => {
+      e.preventDefault();
+      btn.focus();
+    });
+
+    const paint = () => {
+      value.textContent = options[index]?.label ?? '';
+      items.forEach((li, i) => {
+        li.setAttribute('aria-selected', String(i === index));
+        li.classList.toggle('is-selected', i === index);
+      });
+    };
+    let active = index;
+    const highlight = (i: number) => {
+      active = Math.min(options.length - 1, Math.max(0, i));
+      items.forEach((li, n) => li.classList.toggle('is-active', n === active));
+      btn.setAttribute('aria-activedescendant', items[active].id);
+      items[active].scrollIntoView({ block: 'nearest' });
+    };
+    const open = () => {
+      openMenu?.close();
+      list.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      field.classList.add('is-open');
+      highlight(index);
+      openMenu = { close };
+    };
+    function close() {
+      list.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      btn.removeAttribute('aria-activedescendant');
+      field.classList.remove('is-open');
+      if (openMenu && openMenu.close === close) openMenu = null;
+    }
+    const choose = (i: number) => {
+      index = i;
+      select.value = options[i].value;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      paint();
+      close();
+      btn.focus();
+    };
+
+    btn.addEventListener('click', () => (list.hidden ? open() : close()));
+    list.addEventListener('mousedown', (e) => e.preventDefault()); // keep focus on the button
+    list.addEventListener('click', (e) => {
+      const li = (e.target as HTMLElement).closest('li');
+      if (li) choose(items.indexOf(li as HTMLLIElement));
+    });
+    list.addEventListener('mousemove', (e) => {
+      const li = (e.target as HTMLElement).closest('li');
+      if (li) highlight(items.indexOf(li as HTMLLIElement));
+    });
+    btn.addEventListener('keydown', (e) => {
+      const isOpen = !list.hidden;
+      switch (e.key) {
+        case 'ArrowDown':
+        case 'ArrowUp':
+          e.preventDefault();
+          if (!isOpen) open();
+          else highlight(active + (e.key === 'ArrowDown' ? 1 : -1));
+          break;
+        case 'Home':
+        case 'End':
+          if (isOpen) {
+            e.preventDefault();
+            highlight(e.key === 'Home' ? 0 : options.length - 1);
+          }
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          if (isOpen) choose(active);
+          else open();
+          break;
+        case 'Escape':
+          if (isOpen) {
+            e.preventDefault();
+            close();
+          }
+          break;
+        case 'Tab':
+          if (isOpen) close();
+          break;
+        default:
+          // Type-ahead: jump to the next option starting with the typed letter.
+          if (e.key.length === 1 && /\S/.test(e.key)) {
+            const k = e.key.toLowerCase();
+            const from = isOpen ? active + 1 : index + 1;
+            const hit = [...options.keys()].map((n) => (n + from) % options.length).find((n) => options[n].label.toLowerCase().startsWith(k));
+            if (hit !== undefined) {
+              if (!isOpen) open();
+              highlight(hit);
+            }
+          }
+      }
+    });
+    paint();
+  });
+
+  document.addEventListener('click', (e) => {
+    const t = e.target as unknown as HTMLElement;
+    if (openMenu && !t.closest('.has-menu')) openMenu.close();
+  });
+</script>
