@@ -1,0 +1,46 @@
+{
+  "name": "altara",
+  "type": "module",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "export:static": "node scripts/export-static.mjs",
+    "preview": "astro preview",
+    "astro": "astro",
+    "check": "astro check",
+    "types": "wrangler types",
+    "deploy": "astro build && wrangler deploy",
+    "db:migrate:local": "wrangler d1 migrations apply altara-db --local",
+    "db:seed:local": "wrangler d1 execute altara-db --local --file=seed.sql",
+    "db:reset:local": "node scripts/reset-local-db.mjs",
+    "db:tours:local": "wrangler d1 execute altara-db --local --command \"SELECT id, slug, category, duration_days, status, has_page FROM tours\"",
+    "db:migrate:remote": "wrangler d1 migrations apply altara-db --remote",
+    "create-admin": "node scripts/create-admin.mjs",
+    "db:gallery-seed:local": "wrangler d1 execute altara-db --local --file=seed-gallery.sql",
+    "db:cultural-pages:local": "wrangler d1 execute altara-db --local --file=seed-cultural-pages.sql",
+    "db:trekking-pages:local": "wrangler d1 execute altara-db --local --file=seed-trekking-pages.sql",
+    "db:luxury-images:local": "wrangler d1 execute altara-db --local --file=seed-luxury-images.sql",
+    "db:luxury-pages:local": "wrangler d1 execute altara-db --local --file=seed-luxury-pages.sql"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^14.4.4",
+    "@astrojs/sitemap": "^3.7.4",
+    "@fontsource-variable/josefin-sans": "^5.2.0",
+    "@fontsource/league-gothic": "^5.2.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.4.5",
+    "tailwindcss": "^4.3.3"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.146.0"
+  }
+}

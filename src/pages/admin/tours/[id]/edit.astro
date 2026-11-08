@@ -1,0 +1,46 @@
+---
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import TourForm from '../../../../components/admin/TourForm.astro';
+import { getTourById, updateTour } from '../../../../lib/db';
+import { listCategories } from '../../../../lib/categories-db';
+import { parseTourForm, valuesFromTour, type FormErrors } from '../../../../lib/tour-form';
+
+export const prerender = false;
+
+const id = Number(Astro.params.id);
+const tour = Number.isInteger(id) && id > 0 ? await getTourById(id) : null;
+if (!tour) return Astro.rewrite('/404');
+
+const categories = await listCategories();
+let values = valuesFromTour(tour);
+let errors: FormErrors = {};
+let failed = false;
+
+if (Astro.request.method === 'POST') {
+  const result = await parseTourForm(await Astro.request.formData(), tour.id);
+  values = result.values;
+  errors = result.errors;
+  if (result.input) {
+    try {
+      await updateTour(tour.id, result.input);
+      return Astro.redirect(`/admin/tours/${tour.id}/edit?saved=1`);
+    } catch (error) {
+      console.error('[admin/tours/edit] save failed:', error);
+      failed = true;
+    }
+  }
+}
+
+const saved = Astro.url.searchParams.get('saved');
+---
+
+<AdminLayout title={`Edit ${tour.title}`}>
+  <p><a href="/admin/tours" class="text-link">&larr; All tours</a></p>
+  <div class="mt-3 mb-6 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="font-display text-3xl text-ink">Edit tour</h1>
+    {tour.status === 'published' && <a href={`/tours/${tour.slug}`} target="_blank" rel="noopener" class="text-link">View on site</a>}
+  </div>
+  {saved && <p role="status" class="mb-6 max-w-4xl border border-green-700 bg-green-50 p-3 text-sm font-semibold text-green-900">{saved === 'duplicated' ? 'Tour duplicated as a draft. Review it and publish when ready.' : 'Saved.'}</p>}
+  {failed && <p role="alert" class="mb-6 max-w-4xl border border-red-700 bg-red-50 p-3 text-sm text-red-800">Something went wrong and your changes were not saved. They are still below: please try again.</p>}
+  <TourForm categories={categories} values={values} errors={errors} />
+</AdminLayout>

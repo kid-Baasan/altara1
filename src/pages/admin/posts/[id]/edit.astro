@@ -1,0 +1,45 @@
+---
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import PostForm from '../../../../components/admin/PostForm.astro';
+import { getPostById, updatePost } from '../../../../lib/db';
+import { parsePostForm, valuesFromPost } from '../../../../lib/post-form';
+import type { FormErrors } from '../../../../lib/tour-form';
+
+export const prerender = false;
+
+const id = Number(Astro.params.id);
+const post = Number.isInteger(id) && id > 0 ? await getPostById(id) : null;
+if (!post) return Astro.rewrite('/404');
+
+let values = valuesFromPost(post);
+let errors: FormErrors = {};
+let failed = false;
+
+if (Astro.request.method === 'POST') {
+  const result = await parsePostForm(await Astro.request.formData(), post.id);
+  values = result.values;
+  errors = result.errors;
+  if (result.input) {
+    try {
+      await updatePost(post.id, result.input);
+      return Astro.redirect(`/admin/posts/${post.id}/edit?saved=1`);
+    } catch (error) {
+      console.error('[admin/posts/edit] save failed:', error);
+      failed = true;
+    }
+  }
+}
+
+const saved = Astro.url.searchParams.get('saved');
+---
+
+<AdminLayout title={`Edit ${post.title}`}>
+  <p><a href="/admin/posts" class="text-link">&larr; All posts</a></p>
+  <div class="mt-3 mb-6 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="font-display text-3xl text-ink">Edit post</h1>
+    {post.status === 'published' && post.body_html && <a href={`/blog/${post.slug}`} target="_blank" rel="noopener" class="text-link">View on site</a>}
+  </div>
+  {saved && <p role="status" class="mb-6 max-w-4xl border border-green-700 bg-green-50 p-3 text-sm font-semibold text-green-900">Saved.</p>}
+  {failed && <p role="alert" class="mb-6 max-w-4xl border border-red-700 bg-red-50 p-3 text-sm text-red-800">Something went wrong and your changes were not saved. They are still below: please try again.</p>}
+  <PostForm values={values} errors={errors} />
+</AdminLayout>

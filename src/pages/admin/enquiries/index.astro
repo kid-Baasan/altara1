@@ -1,0 +1,46 @@
+﻿---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { listEnquiries } from '../../../lib/db';
+
+export const prerender = false;
+
+const enquiries = await listEnquiries(200);
+const date = (s: string) => new Date(s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+---
+
+<AdminLayout title="Enquiries">
+  <h1 class="font-display text-3xl text-ink">Enquiries</h1>
+
+  {
+    enquiries.length === 0 ? (
+      <p class="mt-6 border border-line bg-white p-6 text-sm text-muted">No enquiries yet. They appear here when someone uses the contact or tour form.</p>
+    ) : (
+      <div class="mt-6 overflow-x-auto border border-line bg-white">
+        <table class="w-full min-w-[40rem] text-left text-sm">
+          <thead class="border-b border-line bg-offwhite text-xs uppercase tracking-wider text-muted">
+            <tr>
+              <th scope="col" class="px-4 py-3">From</th>
+              <th scope="col" class="px-4 py-3">About</th>
+              <th scope="col" class="px-4 py-3">Received</th>
+              <th scope="col" class="px-4 py-3"><span class="sr-only">Open</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line">
+            {enquiries.map((e) => (
+              <tr class:list={[!e.is_read && 'bg-accent/5']}>
+                <td class="px-4 py-3">
+                  <span class:list={[!e.is_read && 'font-bold text-ink']}>{e.name}</span>
+                  {!e.is_read && <span class="ml-2 rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold uppercase text-black">New</span>}
+                  <span class="block text-xs text-muted">{e.email}</span>
+                </td>
+                <td class="px-4 py-3">{e.tour_title ?? <span class="text-muted">{e.purpose || 'General enquiry'}</span>}</td>
+                <td class="whitespace-nowrap px-4 py-3 text-muted">{date(e.created_at)}</td>
+                <td class="px-4 py-3 text-right"><a href={`/admin/enquiries/${e.id}`} class="text-link">Open</a></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</AdminLayout>

@@ -1,0 +1,109 @@
+---
+// Business partner (B2B) enquiry form. Posts to the submitPartnerInquiry Astro Action (validated on the server, saved
+// to the enquiries inbox). Works without JavaScript. Pages using it must be rendered on demand.
+import { actions, isInputError } from 'astro:actions';
+import { PARTNER_TYPES } from '../actions';
+
+const anchor = 'partner-form';
+const result = Astro.getActionResult(actions.submitPartnerInquiry);
+const sent = !!result && !result.error;
+const fieldErrors: Record<string, string[] | undefined> = result?.error && isInputError(result.error) ? result.error.fields : {};
+const failed = !!result?.error && !isInputError(result.error);
+
+const values: Record<string, string> = {};
+if (result?.error && Astro.request.method === 'POST') {
+  try {
+    for (const [key, value] of await Astro.request.clone().formData()) if (typeof value === 'string') values[key] = value;
+  } catch {
+    // Body not readable: show an empty form.
+  }
+}
+const err = (name: string) => fieldErrors[name]?.[0];
+---
+
+{
+  sent ? (
+    <div class="form-notice" role="status" id={anchor}>
+      <strong>Thank you — we have received your proposal.</strong> Our partnerships team will reply within three business days.
+    </div>
+  ) : (
+    <form class="enquire-form enquire-form--box" method="post" action={`${actions.submitPartnerInquiry}#${anchor}`} id={anchor}>
+      {failed && (
+        <div class="form-notice form-notice--error" role="alert">
+          Sorry, something went wrong on our side. Please try again in a moment, or email us directly.
+        </div>
+      )}
+
+      <div class="hp-field" aria-hidden="true">
+        <label>Leave this field empty <input type="text" name="hp" tabindex="-1" autocomplete="off" /></label>
+      </div>
+
+      <div class="form-field">
+        <label for="pf-type">How Would You Like To Work With Us?</label>
+        <select id="pf-type" name="partner_type">
+          {PARTNER_TYPES.map((p) => <option value={p} selected={values.partner_type === p}>{p}</option>)}
+        </select>
+        <span class="field-underline" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="pf-company">Company <span class="req" aria-hidden="true">*</span></label>
+          <input type="text" id="pf-company" name="company" required minlength="2" maxlength="120" placeholder="e.g. Horizon Journeys Ltd" autocomplete="organization" value={values.company} aria-invalid={err('company') ? 'true' : undefined} />
+          <span class="field-underline" />
+          {err('company') && <span class="field-error-text">{err('company')}</span>}
+        </div>
+        <div class="form-field">
+          <label for="pf-website">Website</label>
+          <input type="text" id="pf-website" name="website" maxlength="200" placeholder="e.g. www.horizonjourneys.com" autocomplete="url" value={values.website} />
+          <span class="field-underline" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="pf-name">Your Name <span class="req" aria-hidden="true">*</span></label>
+          <input type="text" id="pf-name" name="name" required minlength="2" maxlength="100" placeholder="e.g. Sarah Johnson" autocomplete="name" value={values.name} aria-invalid={err('name') ? 'true' : undefined} />
+          <span class="field-underline" />
+          {err('name') && <span class="field-error-text">{err('name')}</span>}
+        </div>
+        <div class="form-field">
+          <label for="pf-role">Your Role</label>
+          <input type="text" id="pf-role" name="role" maxlength="80" placeholder="e.g. Head of Product" autocomplete="organization-title" value={values.role} />
+          <span class="field-underline" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="pf-email">Work Email <span class="req" aria-hidden="true">*</span></label>
+          <input type="email" id="pf-email" name="email" required maxlength="200" placeholder="e.g. sarah@horizonjourneys.com" autocomplete="email" value={values.email} aria-invalid={err('email') ? 'true' : undefined} />
+          <span class="field-underline" />
+          {err('email') && <span class="field-error-text">{err('email')}</span>}
+        </div>
+        <div class="form-field">
+          <label for="pf-phone">Phone / WhatsApp</label>
+          <input type="tel" id="pf-phone" name="phone" maxlength="30" placeholder="e.g. +44 20 7946 0000" autocomplete="tel" value={values.phone} aria-invalid={err('phone') ? 'true' : undefined} />
+          <span class="field-underline" />
+          {err('phone') && <span class="field-error-text">{err('phone')}</span>}
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="pf-country">Country <span class="req" aria-hidden="true">*</span></label>
+        <input type="text" id="pf-country" name="country" required maxlength="80" placeholder="e.g. United Kingdom" autocomplete="country-name" value={values.country} aria-invalid={err('country') ? 'true' : undefined} />
+        <span class="field-underline" />
+        {err('country') && <span class="field-error-text">{err('country')}</span>}
+      </div>
+
+      <div class="form-field">
+        <label for="pf-message">How Could We Work Together? <span class="req" aria-hidden="true">*</span></label>
+        <textarea id="pf-message" name="message" required maxlength="2000" placeholder="e.g. We sell small-group Himalayan tours to UK travelers and are looking for a trusted Bhutan partner for 2027." aria-invalid={err('message') ? 'true' : undefined}>{values.message}</textarea>
+        <span class="field-underline" />
+        {err('message') && <span class="field-error-text">{err('message')}</span>}
+      </div>
+
+      <button type="submit" class="btn btn-solid-gold">Send Proposal</button>
+    </form>
+  )
+}

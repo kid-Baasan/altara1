@@ -1,0 +1,38 @@
+﻿---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import TourForm from '../../../components/admin/TourForm.astro';
+import { createTour } from '../../../lib/db';
+import { listCategories } from '../../../lib/categories-db';
+import { emptyValues, parseTourForm, type FormErrors } from '../../../lib/tour-form';
+
+export const prerender = false;
+
+const categories = await listCategories();
+// "Add tour" from a category tab arrives here as ?category=slug.
+const wanted = Astro.url.searchParams.get('category') ?? '';
+let values = emptyValues(categories.some((c) => c.slug === wanted) ? wanted : (categories[0]?.slug ?? ''));
+let errors: FormErrors = {};
+let failed = false;
+
+if (Astro.request.method === 'POST') {
+  const result = await parseTourForm(await Astro.request.formData());
+  values = result.values;
+  errors = result.errors;
+  if (result.input) {
+    try {
+      const id = await createTour(result.input);
+      return Astro.redirect(`/admin/tours/${id}/edit?saved=1`);
+    } catch (error) {
+      console.error('[admin/tours/new] save failed:', error);
+      failed = true;
+    }
+  }
+}
+---
+
+<AdminLayout title="Add tour">
+  <p><a href="/admin/tours" class="text-link">&larr; All tours</a></p>
+  <h1 class="mt-3 mb-6 font-display text-3xl text-ink">Add tour</h1>
+  {failed && <p role="alert" class="mb-6 max-w-4xl border border-red-700 bg-red-50 p-3 text-sm text-red-800">Something went wrong and the tour was not saved. Your changes are still below: please try again.</p>}
+  <TourForm categories={categories} values={values} errors={errors} submitLabel="Create tour" />
+</AdminLayout>

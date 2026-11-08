@@ -1,0 +1,51 @@
+---
+// Admin shell: sidebar on large screens, a wrapping top bar on small ones. No JavaScript.
+import AdminBase from './AdminBase.astro';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const user = Astro.locals.user;
+const path = Astro.url.pathname.replace(/\/$/, '');
+
+const links = [
+  { href: '/admin', label: 'Dashboard', match: (p: string) => p === '/admin' },
+  { href: '/admin/tours', label: 'Tours', match: (p: string) => p.startsWith('/admin/tours') },
+  { href: '/admin/categories', label: 'Categories', match: (p: string) => p.startsWith('/admin/categories') },
+  { href: '/admin/videos', label: 'Videos', match: (p: string) => p.startsWith('/admin/videos') },
+  { href: '/admin/gallery', label: 'Gallery', match: (p: string) => p.startsWith('/admin/gallery') },
+  { href: '/admin/posts', label: 'Journal', match: (p: string) => p.startsWith('/admin/posts') },
+  { href: '/admin/enquiries', label: 'Enquiries', match: (p: string) => p.startsWith('/admin/enquiries') },
+];
+const item =
+  'block rounded px-3 py-2 text-sm font-semibold transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent';
+---
+
+<AdminBase title={title}>
+  <div class="lg:grid lg:min-h-screen lg:grid-cols-[14rem_1fr]">
+    <aside class="bg-dark text-white lg:sticky lg:top-0 lg:h-screen">
+      <div class="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 lg:flex-col lg:items-stretch lg:gap-0 lg:px-4 lg:py-6">
+        <a href="/admin" class="font-display text-lg font-semibold tracking-wide lg:mb-6">Altara <span class="text-accent">Admin</span></a>
+        <nav aria-label="Admin" class="flex flex-wrap items-center gap-1 lg:flex-col lg:items-stretch">
+          {
+            links.map((l) => (
+              <a href={l.href} class:list={[item, l.match(path) && 'bg-white/15 text-accent']} aria-current={l.match(path) ? 'page' : undefined}>
+                {l.label}
+              </a>
+            ))
+          }
+          <a href="/" target="_blank" rel="noopener" class={item}>View site</a>
+          <form method="post" action="/admin/logout" class="contents">
+            <button type="submit" class={`${item} w-full text-left`}>Logout</button>
+          </form>
+        </nav>
+        {user && <p class="w-full truncate text-xs text-white/60 lg:mt-6">{user.email}</p>}
+      </div>
+    </aside>
+    <main id="main" class="min-w-0 px-4 py-8 sm:px-8">
+      <slot />
+    </main>
+  </div>
+</AdminBase>

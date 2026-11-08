@@ -1,0 +1,85 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { deletePost, listAdminPosts } from '../../../lib/db';
+
+export const prerender = false;
+
+let notice = '';
+let failed = false;
+
+// Delete is a POST handled here (Astro's origin check blocks cross-site posts).
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = Number(form.get('id'));
+  if (form.get('intent') === 'delete' && Number.isInteger(id) && id > 0) {
+    try {
+      await deletePost(id);
+      return Astro.redirect('/admin/posts?deleted=1');
+    } catch (error) {
+      console.error('[admin/posts] delete failed:', error);
+      failed = true;
+    }
+  }
+}
+
+if (Astro.url.searchParams.get('deleted')) notice = 'Post deleted.';
+
+const posts = await listAdminPosts();
+const date = (s: string) => new Date(`${s}T00:00:00Z`).toLocaleDateString('en-GB', { dateStyle: 'medium', timeZone: 'UTC' });
+---
+
+<AdminLayout title="Journal">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="font-display text-3xl text-ink">Journal posts</h1>
+    <a href="/admin/posts/new" class="btn btn-solid">Add post</a>
+  </div>
+
+  {notice && <p role="status" class="mt-5 border border-green-700 bg-green-50 p-3 text-sm text-green-900">{notice}</p>}
+  {failed && <p role="alert" class="mt-5 border border-red-700 bg-red-50 p-3 text-sm text-red-800">Something went wrong. Please try again.</p>}
+
+  {
+    posts.length === 0 ? (
+      <p class="mt-6 border border-line bg-white p-6 text-sm text-muted">No posts yet. Add your first one.</p>
+    ) : (
+      <div class="mt-6 overflow-x-auto border border-line bg-white">
+        <table class="w-full min-w-[40rem] text-left text-sm">
+          <thead class="border-b border-line bg-offwhite text-xs uppercase tracking-wider text-muted">
+            <tr>
+              <th scope="col" class="px-4 py-3">Title</th>
+              <th scope="col" class="px-4 py-3">Status</th>
+              <th scope="col" class="px-4 py-3">Date</th>
+              <th scope="col" class="px-4 py-3"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line align-top">
+            {posts.map((p) => (
+              <tr>
+                <td class="px-4 py-3">
+                  <a href={`/admin/posts/${p.id}/edit`} class="font-bold text-ink hover:text-accent-dark">{p.title}</a>
+                  <span class="block text-xs text-muted">/blog/{p.slug}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class:list={['inline-block rounded px-2 py-0.5 text-xs font-bold uppercase', p.status === 'published' ? 'bg-green-100 text-green-900' : 'bg-gray-200 text-gray-800']}>{p.status}</span>
+                </td>
+                <td class="whitespace-nowrap px-4 py-3 text-muted">{date(p.published_on)}</td>
+                <td class="px-4 py-3">
+                  <div class="flex flex-wrap items-start justify-end gap-x-4 gap-y-2">
+                    <a href={`/admin/posts/${p.id}/edit`} class="text-link">Edit</a>
+                    <details class="relative">
+                      <summary class="cursor-pointer list-none text-sm font-bold text-red-700 hover:underline [&::-webkit-details-marker]:hidden">Delete</summary>
+                      <form method="post" class="absolute right-0 z-10 mt-2 w-60 border border-red-700 bg-white p-3 text-left shadow-lg">
+                        <p class="text-xs text-body">Delete “{p.title}”? This cannot be undone.</p>
+                        <input type="hidden" name="id" value={p.id} />
+                        <button name="intent" value="delete" class="mt-3 w-full bg-red-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-800">Yes, delete</button>
+                      </form>
+                    </details>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</AdminLayout>

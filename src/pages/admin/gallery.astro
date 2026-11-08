@@ -1,0 +1,140 @@
+---
+// Add photos to the public gallery (a site path, a link, or an upload), edit captions / groups, hide or delete them.
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminFormAssets from '../../components/admin/AdminFormAssets.astro';
+import {
+  addGalleryImage,
+  deleteGalleryImage,
+  listAdminGalleryImages,
+  setGalleryImageVisible,
+  updateGalleryImage,
+} from '../../lib/gallery-db';
+import { IMAGE_ERROR, isImageUrl } from '../../lib/tour-form';
+
+export const prerender = false;
+
+let notice = '';
+let error = '';
+const values = { image_url: '', alt: '', tag: '' };
+const errors: Partial<Record<keyof typeof values, string>> = {};
+
+const clean = (v: FormDataEntryValue | null, max: number) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const intent = String(form.get('intent') ?? '');
+  const id = Number(form.get('id'));
+  try {
+    if (intent === 'add') {
+      values.image_url = String(form.get('image_url') ?? '').trim();
+      values.alt = clean(form.get('alt'), 200);
+      values.tag = clean(form.get('tag'), 30);
+      if (!values.image_url) errors.image_url = 'Add an image path, a link, or upload a file.';
+      else if (!isImageUrl(values.image_url)) errors.image_url = IMAGE_ERROR;
+      if (!values.alt) errors.alt = 'Describe the photo — it is the caption and the text for screen readers.';
+      if (Object.keys(errors).length === 0) {
+        await addGalleryImage(values);
+        notice = 'Photo added to the gallery.';
+        values.image_url = values.alt = values.tag = '';
+      }
+    } else if (Number.isInteger(id) && id > 0) {
+      if (intent === 'show' || intent === 'hide') await setGalleryImageVisible(id, intent === 'show');
+      else if (intent === 'delete') await deleteGalleryImage(id);
+      else if (intent === 'save') {
+        const alt = clean(form.get('alt'), 200);
+        if (!alt) error = 'A photo needs a caption.';
+        else {
+          await updateGalleryImage(id, alt, clean(form.get('tag'), 30));
+          notice = 'Saved.';
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[admin/gallery] failed:', e);
+    error = 'Something went wrong. Please try again.';
+  }
+}
+
+const images = await listAdminGalleryImages();
+const tags = [...new Set(images.map((i) => i.tag).filter(Boolean))].sort();
+---
+
+<AdminLayout title="Gallery">
+  <AdminFormAssets />
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="font-display text-3xl text-ink">Gallery</h1>
+    <a href="/gallery" target="_blank" rel="noopener" class="text-link">View on site</a>
+  </div>
+
+  <form method="post" data-admin-form class="mt-6 max-w-3xl border border-line bg-white p-5">
+    <input type="hidden" name="intent" value="add" />
+    <h2 class="text-xs font-bold uppercase tracking-[0.14em] text-ink">Add a photo</h2>
+    <div data-preview-wrap class="mt-4 flex flex-wrap items-start gap-4 sm:flex-nowrap">
+      <img data-preview-img src={values.image_url || undefined} alt="" referrerpolicy="no-referrer" class="h-28 w-44 shrink-0 bg-line object-cover" hidden={!values.image_url} />
+      <div class="min-w-0 flex-1 space-y-4">
+        <label class="block">
+          <span class="field-label">Image path or URL</span>
+          <input name="image_url" type="text" inputmode="url" maxlength="2000" value={values.image_url} data-preview placeholder="/assets/images/image/taktshang.webp" aria-invalid={errors.image_url ? 'true' : undefined} class="field" />
+          {errors.image_url && <span class="field-error">{errors.image_url}</span>}
+        </label>
+        <div>
+          <label class="upload-btn js-controls" hidden>
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" data-upload class="sr-only" />
+            Upload from device
+          </label>
+          <span data-upload-status role="status" class="field-hint"></span>
+        </div>
+        <label class="block">
+          <span class="field-label">Caption</span>
+          <input name="alt" type="text" maxlength="200" value={values.alt} placeholder="Prayer flags above the Paro valley" aria-invalid={errors.alt ? 'true' : undefined} class="field" />
+          {errors.alt && <span class="field-error">{errors.alt}</span>}
+        </label>
+        <label class="block">
+          <span class="field-label">Group (optional)</span>
+          <input name="tag" type="text" maxlength="30" value={values.tag} list="gallery-tags" placeholder="Landscapes" class="field" />
+          <datalist id="gallery-tags">{tags.map((t) => <option value={t} />)}</datalist>
+          <span class="field-hint">Photos with the same group appear under one filter on the gallery page.</span>
+        </label>
+        <button type="submit" class="btn btn-solid">Add to gallery</button>
+      </div>
+    </div>
+  </form>
+
+  {notice && <p role="status" class="mt-5 max-w-3xl border border-green-700 bg-green-50 p-3 text-sm text-green-900">{notice}</p>}
+  {error && <p role="alert" class="mt-5 max-w-3xl border border-red-700 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+
+  {
+    images.length === 0 ? (
+      <p class="mt-6 border border-line bg-white p-6 text-sm text-muted">No photos yet. Add the first one above.</p>
+    ) : (
+      <ul class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {images.map((img) => (
+          <li class="border border-line bg-white">
+            <img src={img.image_url} alt={img.alt} loading="lazy" referrerpolicy="no-referrer" class:list={['aspect-[4/3] w-full object-cover', !img.is_visible && 'opacity-40']} />
+            <form method="post" class="space-y-3 p-4">
+              <input type="hidden" name="id" value={img.id} />
+              <label class="block">
+                <span class="field-label">Caption</span>
+                <input name="alt" type="text" maxlength="200" value={img.alt} class="field" />
+              </label>
+              <label class="block">
+                <span class="field-label">Group</span>
+                <input name="tag" type="text" maxlength="30" value={img.tag} list="gallery-tags" class="field" />
+              </label>
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <button name="intent" value="save" class="text-link">Save</button>
+                {img.is_visible ? (
+                  <button name="intent" value="hide" class="text-link">Hide</button>
+                ) : (
+                  <button name="intent" value="show" class="text-link">Show</button>
+                )}
+                <button name="intent" value="delete" class="text-sm font-bold text-red-700 hover:underline">Delete</button>
+              </div>
+              {!img.is_visible && <p class="text-[11px] font-bold uppercase tracking-wider text-muted">Hidden from the site</p>}
+            </form>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</AdminLayout>

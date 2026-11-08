@@ -1,0 +1,247 @@
+---
+import map from '../data/asia-map.json';
+
+const { countries, cities } = map as any;
+const paro = cities.PBH;
+
+// Airline service. Bhutan Airlines routes are the ones published on this site's schedule;
+// Drukair serves all listed gateways. Confirm any change with the airlines.
+const airlines: Record<string, { name: string; color: string; bend: number; codes: string[] }> = {
+  drukair: { name: 'Drukair', color: '#B8924A', bend: 0.2, codes: ['DEL', 'KTM', 'BOM', 'CCU', 'IXB', 'GAU', 'DAC', 'GAY', 'BKK', 'SIN'] },
+  bhutan: { name: 'Bhutan Airlines', color: '#16302A', bend: -0.14, codes: ['DEL', 'KTM', 'BKK'] },
+};
+const info: Record<string, { country: string; time?: string; label: 'l' | 'r' | 't' | 'b' }> = {
+  DEL: { country: 'India', time: 'about 2 h 20 min', label: 'b' },
+  KTM: { country: 'Nepal', time: 'about 1 h 15 min', label: 'l' },
+  BOM: { country: 'India', label: 'b' },
+  CCU: { country: 'India', label: 'l' },
+  IXB: { country: 'India', label: 'l' },
+  GAU: { country: 'India', label: 'r' },
+  DAC: { country: 'Bangladesh', label: 'r' },
+  GAY: { country: 'India', label: 'l' },
+  BKK: { country: 'Thailand', time: 'about 3 h 15 min', label: 'b' },
+  SIN: { country: 'Singapore', label: 'l' },
+};
+const curve = (a: { x: number; y: number }, bend: number) => {
+  const dx = paro.x - a.x, dy = paro.y - a.y;
+  const mx = (a.x + paro.x) / 2 - dy * bend, my = (a.y + paro.y) / 2 + dx * bend;
+  return `M${a.x} ${a.y}Q${mx.toFixed(1)} ${my.toFixed(1)} ${paro.x} ${paro.y}`;
+};
+const routes = Object.entries(airlines).flatMap(([id, al]) =>
+  al.codes.map((code) => ({ id, code, color: al.color, d: curve(cities[code], al.bend) })),
+);
+const stops = Object.keys(info).map((code) => ({
+  code, ...cities[code], ...info[code],
+  by: Object.entries(airlines).filter(([, a]) => a.codes.includes(code)).map(([id]) => id),
+}));
+const labels = [
+  { t: 'INDIA', x: 330, y: 360 }, { t: 'CHINA', x: 430, y: 90 }, { t: 'NEPAL', x: 440, y: 205 },
+  { t: 'THAILAND', x: 760, y: 470 }, { t: 'MYANMAR', x: 700, y: 360 }, { t: 'BANGLADESH', x: 575, y: 300 },
+];
+const labelPos: Record<string, [number, number, string]> = {
+  l: [-11, 4, 'end'], r: [11, 4, 'start'], t: [0, -12, 'middle'], b: [0, 21, 'middle'],
+};
+const VB = [0, 30, 977, 930];
+const pct = (x: number, y: number) => ({ l: (((x - VB[0]) / VB[2]) * 100).toFixed(2), t: (((y - VB[1]) / VB[3]) * 100).toFixed(2) });
+const PLANE = 'M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z';
+const infoJson = JSON.stringify({
+  __pos: Object.fromEntries([['PBH', paro], ...stops.map((s) => [s.code, s])].map(([k, v]: any) => [k, pct(v.x, v.y)])),
+  ...Object.fromEntries(stops.map((s) => [s.code, { name: s.name, country: s.country, time: s.time ?? null, by: s.by.map((b: string) => airlines[b].name) }])),
+});
+---
+<section class="asia-flights" id="flights-into-bhutan">
+  <div class="container">
+    <div class="asia-flights-header reveal">
+      <span class="eyebrow eyebrow--accent">International Flights</span>
+      <h2>Flying Into Paro</h2>
+      <p>Bhutan's only international airport connects with Asia through Drukair and Bhutan Airlines. Filter by airline,
+        or tap an airport to trace its route to Paro. Schedules change by season &mdash; we confirm your flights when we plan your journey.</p>
+    </div>
+<div class="fm" data-flightmap>
+  <div class="fm-bar">
+    <div class="fm-filters" role="group" aria-label="Show airline">
+      <button type="button" class="fm-chip" data-filter="all" aria-pressed="true">All airlines</button>
+      <button type="button" class="fm-chip" data-filter="drukair" aria-pressed="false"><i style={`background:${airlines.drukair.color}`}></i>Drukair</button>
+      <button type="button" class="fm-chip" data-filter="bhutan" aria-pressed="false"><i style={`background:${airlines.bhutan.color}`}></i>Bhutan Airlines</button>
+    </div>
+  </div>
+
+  <div class="fm-stage">
+    <div class="fm-scroll">
+      <svg class="fm-svg" viewBox={VB.join(' ')} data-vbd={VB.join(' ')} data-vbm="180 30 715 930" role="group" aria-label="Map of Asia showing flight routes into Paro, Bhutan" data-filter="all">
+        <g class="fm-land">
+          {countries.map((c: any) => <path d={c.d} class:list={{ 'is-bt': c.name === 'Bhutan' }}><title>{c.name}</title></path>)}
+        </g>
+        <g class="fm-names" aria-hidden="true">
+          {labels.map((l) => <text x={l.x} y={l.y}>{l.t}</text>)}
+          <text class="fm-sea" x="470" y="470">Bay of Bengal</text>
+          <text class="fm-sea" x="780" y="700">South China Sea</text>
+        </g>
+        <g class="fm-routes">
+          {routes.map((r) => <path class="fm-route" d={r.d} data-airline={r.id} data-code={r.code} style={`--c:${r.color}`} />)}
+        </g>
+        <g class="fm-stops">
+          {stops.map((s) => {
+            const [dx, dy, anchor] = labelPos[s.label];
+            return (
+              <g class="fm-stop" tabindex="0" role="button" data-code={s.code} data-by={s.by.join(' ')} transform={`translate(${s.x} ${s.y})`} aria-label={`${s.name}, ${s.country}`}>
+                <circle class="fm-hit" r="14" /><circle class="fm-ring" r="11" /><circle class="fm-dot" r="6.5" />
+                <path class="fm-ico" d={PLANE} transform="translate(-4 -4) scale(0.33)" />
+                <text class="fm-lbl" x={dx} y={dy} text-anchor={anchor}>{s.name.split(' (')[0]}</text>
+              </g>
+            );
+          })}
+          <g class="fm-paro" transform={`translate(${paro.x} ${paro.y})`}>
+            <circle class="fm-pulse" r="8" />
+            <circle class="fm-pdot" r="5.5" />
+            <text class="fm-lbl fm-plbl" x="0" y="-13" text-anchor="middle">Paro (PBH)</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <div class="fm-card" data-card role="dialog" aria-live="polite" hidden></div>
+  </div>
+  <p class="fm-note">Tap an airport for details.</p>
+  <script type="application/json" data-info set:html={infoJson} />
+</div>
+  </div>
+</section>
+
+<style>
+  .asia-flights { background: var(--color-offwhite); color: #16302A; padding: 90px 0 80px; }
+  .asia-flights-header { text-align: center; max-width: 720px; margin: 0 auto; }
+  .asia-flights-header h2 { color: #16302A; margin: .4rem 0 1rem; }
+  .asia-flights-header p { color: rgb(22 48 42 / .75); line-height: 1.7; }
+</style>
+<style>
+  .fm { margin-top: 2.5rem; color: #16302A; text-align: left; }
+  .fm-bar { display: flex; flex-wrap: wrap; gap: .75rem 1rem; justify-content: space-between; margin-bottom: 1rem; }
+  .fm-filters { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .fm-chip { display: inline-flex; align-items: center; gap: .55rem; padding: .6rem 1.1rem; border: 1px solid rgb(22 48 42 / .35); border-radius: 0; font-family: var(--font-body); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: inherit; background: rgb(22 48 42 / .04); transition: background .25s, color .25s, border-color .25s; }
+  .fm-chip i { width: 10px; height: 10px; border-radius: 50%; }
+  .fm-chip:hover { background: rgb(22 48 42 / .1); }
+  .fm-chip[aria-pressed='true'] { background: #16302A; color: #FAFAF8; border-color: #16302A; }
+  .fm-stage { position: relative; width: 100%; max-width: 1240px; margin-inline: auto; }
+  .fm-svg { display: block; width: 100%; height: auto; max-height: 88vh; margin-inline: auto; touch-action: manipulation;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 96%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to right, transparent, #000 9%, #000 91%, transparent), linear-gradient(to bottom, transparent, #000 4%, #000 96%, transparent);
+    mask-composite: intersect; }
+
+  .fm-land path { fill: rgb(22 48 42 / .08); stroke: rgb(22 48 42 / .3); stroke-width: .6; stroke-linejoin: round; }
+  .fm-land path.is-bt { fill: #D9B56E; stroke: #16302A; }
+  .fm-names text { fill: rgb(22 48 42 / .55); font: 400 11px var(--font-body); letter-spacing: .25em; text-anchor: middle; }
+  .fm-names .fm-sea { font-style: italic; font-weight: 400; letter-spacing: .08em; fill: rgb(22 48 42 / .45); }
+
+  .fm-route { fill: none; stroke: var(--c); stroke-width: 1.2; stroke-linecap: round; stroke-dasharray: 4 4; opacity: .85; transition: opacity .3s, stroke-width .3s; animation: fm-flow 1.6s linear infinite; }
+  @keyframes fm-flow { to { stroke-dashoffset: -8; } }
+  .fm-svg[data-filter='drukair'] .fm-route:not([data-airline='drukair']),
+  .fm-svg[data-filter='bhutan'] .fm-route:not([data-airline='bhutan']) { opacity: 0; pointer-events: none; }
+  .fm-svg[data-active] .fm-route { opacity: .15; }
+  .fm-svg[data-filter='drukair'][data-active] .fm-route:not([data-airline='drukair']),
+  .fm-svg[data-filter='bhutan'][data-active] .fm-route:not([data-airline='bhutan']) { opacity: 0; }
+  .fm-svg[data-active] .fm-route.on { opacity: 1; stroke-width: 1.8; }
+
+  .fm-stop { cursor: pointer; outline: none; }
+  .fm-hit { fill: transparent; }
+  .fm-dot { fill: #FAFAF8; stroke: #16302A; stroke-width: 1.4; transition: fill .25s; }
+  .fm-ico { fill: #16302A; pointer-events: none; }
+  .fm-ring { fill: none; stroke: #B8924A; stroke-width: 1.6; opacity: 0; transition: opacity .2s; }
+  .fm-stop:hover .fm-ring, .fm-stop:focus-visible .fm-ring, .fm-stop.on .fm-ring { opacity: 1; }
+  .fm-svg[data-filter='drukair'] .fm-stop:not([data-by~='drukair']),
+  .fm-svg[data-filter='bhutan'] .fm-stop:not([data-by~='bhutan']) { opacity: .25; pointer-events: none; }
+  .fm-lbl { fill: #16302A; font: 400 10px var(--font-body); letter-spacing: .06em; paint-order: stroke; stroke: #FAFAF8; stroke-width: 2.4; stroke-linejoin: round; pointer-events: none; }
+  .fm-plbl { font-size: 11px; fill: #8A6A2C; }
+  .fm-pdot { fill: #D9B56E; stroke: #16302A; stroke-width: 1.4; }
+  .fm-pulse { fill: none; stroke: #D9B56E; stroke-width: 1.4; transform-box: fill-box; transform-origin: center; animation: fm-pulse 2.2s ease-out infinite; }
+  @keyframes fm-pulse { from { transform: scale(.7); opacity: 1; } to { transform: scale(3); opacity: 0; } }
+
+  .fm-card { position: absolute; z-index: 3; left: var(--x); top: var(--y); width: min(240px, 80%); padding: .8rem .9rem .75rem; background: #FAFAF8; color: #16302A; border-radius: 0; box-shadow: 0 18px 40px rgb(22 48 42 / .22); border: 1px solid rgb(22 48 42 / .12); font-size: 12px; line-height: 1.45; }
+  .fm-card[hidden] { display: none; }
+  .fm-card[data-x='left'][data-y='up'] { transform: translate(calc(-100% - 20px), -85%); }
+  .fm-card[data-x='right'][data-y='up'] { transform: translate(20px, -85%); }
+  .fm-card[data-x='left'][data-y='mid'] { transform: translate(calc(-100% - 20px), -30%); }
+  .fm-card[data-x='right'][data-y='mid'] { transform: translate(20px, -30%); }
+  .fm-note { display: none; margin: .75rem 0 0; font-size: 12px; opacity: .7; text-align: center; }
+  @media (max-width: 640px) {
+    .fm-names, .fm-lbl { display: none; }
+    .fm-route { stroke-width: 3; stroke-dasharray: 8 7; }
+    .fm-svg[data-active] .fm-route.on { stroke-width: 4; }
+    .fm-land path { stroke-width: 1.2; }
+    .fm-hit { r: 26px; }
+    .fm-ring { r: 20px; stroke-width: 3px; }
+    .fm-dot { r: 14px; stroke-width: 3px; }
+    .fm-pdot { r: 11px; stroke-width: 3px; }
+    .fm-pulse { r: 14px; stroke-width: 3px; }
+    .fm-ico { transform: translate(-9px, -9px) scale(.75); }
+    .fm-card[data-x][data-y] { position: relative; left: auto; top: auto; width: auto; transform: none !important; margin-top: .75rem; }
+    .fm-note { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) { .fm-route, .fm-pulse { animation: none; } }
+</style>
+
+<style is:global>
+  .fm-card h3 { margin: 0 0 .2rem; font-size: 17px; line-height: 1; color: #16302A; }
+  .fm-card p { margin: .3rem 0 0; }
+  .fm-card .fm-sm { font-size: 10px; opacity: .65; margin-top: .6rem; }
+  .fm-card .fm-x { position: absolute; top: .5rem; right: .6rem; width: 22px; height: 22px; border: 0; background: transparent; color: #16302A; font-size: 17px; line-height: 1; cursor: pointer; }
+  .fm-tag { display: inline-flex; align-items: center; gap: .4rem; margin: .45rem .4rem 0 0; padding: .22rem .65rem; border-radius: 0; font: 400 10px var(--font-body); letter-spacing: .1em; text-transform: uppercase; background: rgb(22 48 42 / .1); }
+  .fm-tag i { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-flightmap]');
+  if (root) {
+    const svg = root.querySelector<SVGSVGElement>('.fm-svg')!;
+    const card = root.querySelector<HTMLElement>('[data-card]')!;
+    const info = JSON.parse(root.querySelector('[data-info]')!.textContent!);
+    const pos = info.__pos; delete info.__pos;
+    const colors: Record<string, string> = { Drukair: '#B8924A', 'Bhutan Airlines': '#16302A' };
+    const stops = [...root.querySelectorAll<SVGGElement>('.fm-stop')];
+    const routes = [...root.querySelectorAll<SVGPathElement>('.fm-route')];
+    const mq = window.matchMedia('(max-width: 640px)');
+    const fit = () => svg.setAttribute('viewBox', (mq.matches ? svg.dataset.vbm : svg.dataset.vbd)!);
+    fit(); mq.addEventListener('change', fit);
+    let current: string | null = null;
+
+    const lit = (code: string | null) => {
+      routes.forEach((r) => r.classList.toggle('on', !!code && r.dataset.code === code));
+      if (code) svg.setAttribute('data-active', ''); else svg.removeAttribute('data-active');
+    };
+    const select = (code: string | null) => {
+      current = code;
+      stops.forEach((s) => s.classList.toggle('on', s.dataset.code === code));
+      lit(code);
+      if (!code) { card.hidden = true; return; }
+      const d = info[code], at = pos[code];
+      const tags = d.by.map((n: string) => `<span class="fm-tag"><i style="background:${colors[n]}"></i>${n}</span>`).join('');
+      card.innerHTML = `<button type="button" class="fm-x" aria-label="Close">×</button><h3>${d.name.split(' (')[0]} (${code}) → Paro</h3><p>${d.country}${d.time ? ' · flight time ' + d.time : ''}</p>${tags}<p class="fm-sm">Schedules change by season. We confirm your flights when we plan your trip.</p>`;
+      card.style.setProperty('--x', at.l + '%'); card.style.setProperty('--y', at.t + '%');
+      card.dataset.x = +at.l > 60 ? 'left' : 'right';
+      card.dataset.y = +at.t > 62 ? 'up' : 'mid';
+      card.hidden = false;
+      card.querySelector('.fm-x')!.addEventListener('click', () => select(null));
+    };
+    stops.forEach((s) => {
+      const code = s.dataset.code!;
+      const toggle = () => select(current === code ? null : code);
+      s.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
+      s.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+      s.addEventListener('mouseenter', () => { if (!current) lit(code); });
+      s.addEventListener('mouseleave', () => { if (!current) lit(null); });
+    });
+    svg.addEventListener('click', () => select(null));
+    card.addEventListener('click', (e) => e.stopPropagation());
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') select(null); });
+
+    root.querySelectorAll<HTMLButtonElement>('.fm-chip[data-filter]').forEach((b) => b.addEventListener('click', () => {
+      root.querySelectorAll('.fm-chip[data-filter]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      const f = b.dataset.filter!;
+      svg.setAttribute('data-filter', f);
+      if (current && f !== 'all') {
+        const s = stops.find((x) => x.dataset.code === current)!;
+        if (!(s.dataset.by || '').split(' ').includes(f)) select(null);
+      }
+    }));
+  }
+</script>

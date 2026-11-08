@@ -1,0 +1,22 @@
+---
+// "Districts On This Tour" outline map. Districts listed in `active` are highlighted.
+import { districts } from '../data/districts';
+
+interface Props {
+  active: string[];
+}
+
+const { active } = Astro.props;
+const on = new Set(active);
+---
+
+<svg id="tour-map-svg" viewBox="0 -40 792.44208 492" overflow="visible" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="map-drop-shadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#3E2A1E" flood-opacity="0.13"></feDropShadow>
+    </filter>
+  </defs>
+  <g id="districts-group" filter="url(#map-drop-shadow)">
+    {districts.map((d) => <path class:list={['tour-district', on.has(d.name) && 'is-on-tour']} id={`tm-BT-${d.code}`} title={d.name} d={d.d}></path>)}
+  </g>
+</svg>

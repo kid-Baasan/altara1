@@ -1,0 +1,13 @@
+---
+import TourCategoryPage from '../components/TourCategoryPage.astro';
+import { getCategoryBySlug } from '../lib/categories-db';
+import { getToursByCategory } from '../lib/db';
+
+export const prerender = false;
+
+const category = await getCategoryBySlug('cultural');
+if (!category) return Astro.rewrite('/404');
+const tours = await getToursByCategory('cultural');
+---
+
+<TourCategoryPage category={category} tours={tours} />

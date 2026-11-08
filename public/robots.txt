@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+
+# TODO: update with the real production domain.
+Sitemap: https://altara.travel/sitemap-index.xml
+Sitemap: https://altara.travel/sitemap-tours.xml

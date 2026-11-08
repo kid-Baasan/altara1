@@ -1,0 +1,46 @@
+---
+// One tour card (grid and related-tours slider). Markup and classes match the original site.
+import type { Tour } from '../lib/db';
+import { durationLabel } from '../lib/text';
+
+interface Props extends astroHTML.JSX.AnchorHTMLAttributes {
+  tour: Tour;
+  /** Optional small tag over the photo (e.g. the tour's category on the All Tours page). */
+  label?: string;
+  /** Show the altitude without its trailing "m" (used on the Luxury page). */
+  bareAltitude?: boolean;
+}
+
+const { tour, label, bareAltitude = false, ...attrs } = Astro.props;
+const altitude = bareAltitude ? tour.max_altitude.replace(/\s*m$/i, '') : tour.max_altitude;
+const href = tour.has_page ? `/tours/${tour.slug}` : '#enquire';
+const position = tour.card_position ? `;background-position:${tour.card_position}` : '';
+const style = `background-image:url('${tour.cover_image_url}')${position};`;
+---
+
+<a href={href} class="tour-card" style={style} {...attrs}>
+  <div class="bg" style={style}></div>
+  {label && <span class="tour-card-tag">{label}</span>}
+  <div class="tour-card-body">
+    <h3>{tour.title}</h3>
+    <div class="tour-meta">
+      <span class="tour-meta-item"
+        ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 7v5l3 3"></path>
+        </svg>{durationLabel(tour.duration_days)}</span
+      >
+      {
+        tour.max_altitude && (
+          <span class="tour-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 19l6-10 4 6 2-3 6 7H3z" />
+            </svg>
+            {altitude}
+          </span>
+        )
+      }
+    </div>
+    <span class="tour-cta">Explore Tour</span>
+  </div>
+</a>

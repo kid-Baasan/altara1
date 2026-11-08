@@ -1,0 +1,57 @@
+---
+import RowControls from './RowControls.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  driving?: string;
+  elevation?: string;
+  /** One attraction per line. */
+  attractions?: string;
+  overnight?: string;
+  errors?: { title?: string; description?: string; driving?: string; elevation?: string; attractions?: string; overnight?: string };
+}
+
+const { title = '', description = '', driving = '', elevation = '', attractions = '', overnight = '', errors = {} } = Astro.props;
+---
+
+<div data-row class="itinerary-row border border-line bg-offwhite p-4">
+  <div class="mb-3 flex items-center justify-between gap-3">
+    <span class="day-label text-xs font-bold uppercase tracking-[0.16em] text-accent-dark"></span>
+    <RowControls />
+  </div>
+  <label class="block">
+    <span class="field-label">Day title</span>
+    <input name="itinerary_title" type="text" maxlength="150" value={title} placeholder="Arrive in Paro, drive to Thimphu" aria-invalid={errors.title ? 'true' : undefined} class="field" />
+    {errors.title && <span class="field-error">{errors.title}</span>}
+  </label>
+  <div class="mt-3 grid gap-3 sm:grid-cols-2">
+    <label class="block">
+      <span class="field-label">Driving duration</span>
+      <input name="itinerary_driving" type="text" maxlength="100" value={driving} placeholder="47 km / 1 to 1.5 hrs" aria-invalid={errors.driving ? 'true' : undefined} class="field" />
+      <span class="field-hint">For a walking day, start with “Trek:” (for example “Trek: 5 to 6 hrs / 12 km”).</span>
+      {errors.driving && <span class="field-error">{errors.driving}</span>}
+    </label>
+    <label class="block">
+      <span class="field-label">Elevation</span>
+      <input name="itinerary_elevation" type="text" maxlength="100" value={elevation} placeholder="2200m / 7218ft" aria-invalid={errors.elevation ? 'true' : undefined} class="field" />
+      {errors.elevation && <span class="field-error">{errors.elevation}</span>}
+    </label>
+  </div>
+  <label class="mt-3 block">
+    <span class="field-label">Description</span>
+    <textarea name="itinerary_description" rows="4" maxlength="2000" aria-invalid={errors.description ? 'true' : undefined} class="field">{description}</textarea>
+    {errors.description && <span class="field-error">{errors.description}</span>}
+  </label>
+  <label class="mt-3 block">
+    <span class="field-label">Attractions</span>
+    <textarea name="itinerary_attractions" rows="3" placeholder={'Memorial Chorten\nExplore Thimphu Town'} aria-invalid={errors.attractions ? 'true' : undefined} class="field">{attractions}</textarea>
+    <span class="field-hint">One attraction per line.</span>
+    {errors.attractions && <span class="field-error">{errors.attractions}</span>}
+  </label>
+  <label class="mt-3 block">
+    <span class="field-label">Overnight</span>
+    <input name="itinerary_overnight" type="text" maxlength="150" value={overnight} placeholder="Overnight at the hotel in Thimphu" aria-invalid={errors.overnight ? 'true' : undefined} class="field" />
+    {errors.overnight && <span class="field-error">{errors.overnight}</span>}
+  </label>
+</div>

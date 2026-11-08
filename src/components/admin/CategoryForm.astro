@@ -1,0 +1,141 @@
+---
+// The tour-category editor. Posts back to the page that rendered it; the page validates on the server.
+import type { FormErrors } from '../../lib/tour-form';
+import type { CategoryFormValues } from '../../lib/category-form';
+import AdminFormAssets from './AdminFormAssets.astro';
+
+interface Props {
+  values: CategoryFormValues;
+  errors?: FormErrors;
+  submitLabel?: string;
+}
+
+const { values, errors = {}, submitLabel = 'Save category' } = Astro.props;
+const errorCount = Object.keys(errors).length;
+const group = 'border border-line bg-white p-5 sm:p-7';
+const legend = 'font-display text-2xl text-ink';
+---
+
+<AdminFormAssets />
+
+<form method="post" data-admin-form class="max-w-4xl space-y-8" novalidate>
+  {
+    errorCount > 0 && (
+      <div role="alert" class="border border-red-700 bg-red-50 p-4 text-sm text-red-800">
+        Please fix the {errorCount === 1 ? '1 problem' : `${errorCount} problems`} marked below. Nothing has been saved yet.
+      </div>
+    )
+  }
+
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>1. Category</legend>
+    <div class="grid gap-5 sm:grid-cols-2">
+      <label class="block sm:col-span-2">
+        <span class="field-label">Name <b class="text-red-700">*</b></span>
+        <input name="label" type="text" required maxlength="60" value={values.label} data-title placeholder="Wellness Tours" aria-invalid={errors.label ? 'true' : undefined} class="field" />
+        <span class="field-hint">Used as the page title, e.g. "Wellness Tours".</span>
+        {errors.label && <span class="field-error">{errors.label}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Slug</span>
+        <input name="slug" type="text" maxlength="60" value={values.slug} data-slug data-auto={values.slug ? 'false' : 'true'} aria-invalid={errors.slug ? 'true' : undefined} class="field" />
+        <span class="field-hint">The page lives at /tours/category/your-slug. Changing it moves the category's tours with it.</span>
+        {errors.slug && <span class="field-error">{errors.slug}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Order</span>
+        <input name="sort_order" type="number" min="0" max="9999" step="1" value={values.sort_order} aria-invalid={errors.sort_order ? 'true' : undefined} class="field" />
+        <span class="field-hint">Lower numbers come first in the admin tabs and the tour-form list.</span>
+        {errors.sort_order && <span class="field-error">{errors.sort_order}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Tours are called</span>
+        <select name="enquire_noun" class="field" aria-invalid={errors.enquire_noun ? 'true' : undefined}>
+          <option value="Tour" selected={values.enquire_noun !== 'Trek'}>Tour ("Book This Tour")</option>
+          <option value="Trek" selected={values.enquire_noun === 'Trek'}>Trek ("Book This Trek")</option>
+        </select>
+        {errors.enquire_noun && <span class="field-error">{errors.enquire_noun}</span>}
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>2. Page content</legend>
+    <div class="space-y-5">
+      <label class="block">
+        <span class="field-label">Heading above the tours</span>
+        <input name="heading" type="text" maxlength="100" value={values.heading} placeholder="Wellness Itineraries" aria-invalid={errors.heading ? 'true' : undefined} class="field" />
+        {errors.heading && <span class="field-error">{errors.heading}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Introduction</span>
+        <textarea name="lede" rows="3" maxlength="600" aria-invalid={errors.lede ? 'true' : undefined} class="field">{values.lede}</textarea>
+        <span class="field-hint">Optional paragraph under the heading.</span>
+        {errors.lede && <span class="field-error">{errors.lede}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Meta description</span>
+        <textarea name="description" rows="2" maxlength="160" data-count="160" aria-invalid={errors.description ? 'true' : undefined} class="field">{values.description}</textarea>
+        <span class="field-hint">Shown in search results. <output data-counter class="font-bold">{values.description.length} / 160</output></span>
+        {errors.description && <span class="field-error">{errors.description}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">"Related tours" line</span>
+        <input name="related_lede" type="text" maxlength="200" value={values.related_lede} placeholder="More ways to unwind, from Altara's Wellness Tours collection." aria-invalid={errors.related_lede ? 'true' : undefined} class="field" />
+        {errors.related_lede && <span class="field-error">{errors.related_lede}</span>}
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>3. Photos</legend>
+    <div class="space-y-6">
+      <div data-preview-wrap class="flex flex-wrap items-start gap-4 sm:flex-nowrap">
+        <img data-preview-img src={values.hero_image || undefined} alt="" class="h-24 w-40 shrink-0 bg-line object-cover" hidden={!values.hero_image} />
+        <div class="min-w-0 flex-1 space-y-3">
+          <label class="block">
+            <span class="field-label">Hero photo <b class="text-red-700">*</b></span>
+            <input name="hero_image" type="text" maxlength="2000" value={values.hero_image} data-preview placeholder="/assets/images/image/himalayas.webp" aria-invalid={errors.hero_image ? 'true' : undefined} class="field" />
+            {errors.hero_image && <span class="field-error">{errors.hero_image}</span>}
+          </label>
+          <label class="upload-btn js-controls" hidden>
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" data-upload class="sr-only" />
+            Upload from device
+          </label>
+          <span data-upload-status role="status" class="field-hint"></span>
+          <label class="block">
+            <span class="field-label">Hero crop</span>
+            <input name="hero_position" type="text" maxlength="40" value={values.hero_position} aria-invalid={errors.hero_position ? 'true' : undefined} class="field sm:max-w-xs" />
+            {errors.hero_position && <span class="field-error">{errors.hero_position}</span>}
+          </label>
+        </div>
+      </div>
+      <div data-preview-wrap class="flex flex-wrap items-start gap-4 sm:flex-nowrap">
+        <img data-preview-img src={values.cta_image || undefined} alt="" class="h-24 w-40 shrink-0 bg-line object-cover" hidden={!values.cta_image} />
+        <div class="min-w-0 flex-1 space-y-3">
+          <label class="block">
+            <span class="field-label">"Begin Your Journey" band photo <b class="text-red-700">*</b></span>
+            <input name="cta_image" type="text" maxlength="2000" value={values.cta_image} data-preview aria-invalid={errors.cta_image ? 'true' : undefined} class="field" />
+            {errors.cta_image && <span class="field-error">{errors.cta_image}</span>}
+          </label>
+          <label class="upload-btn js-controls" hidden>
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" data-upload class="sr-only" />
+            Upload from device
+          </label>
+          <span data-upload-status role="status" class="field-hint"></span>
+          <label class="block">
+            <span class="field-label">Band text</span>
+            <textarea name="cta_text" rows="2" maxlength="300" aria-invalid={errors.cta_text ? 'true' : undefined} class="field">{values.cta_text}</textarea>
+            <span class="field-hint">Leave empty for the standard "Share a little about how you'd like to feel…" text.</span>
+            {errors.cta_text && <span class="field-error">{errors.cta_text}</span>}
+          </label>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="flex flex-wrap items-center gap-4">
+    <button type="submit" class="btn btn-solid">{submitLabel}</button>
+    <a href="/admin/categories" class="text-link">Cancel</a>
+  </div>
+</form>

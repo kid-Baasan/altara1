@@ -1,0 +1,100 @@
+---
+// Journal article. The body is HTML written in the admin (trusted: only logged-in admins can save it).
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import HeroMist from '../../components/HeroMist.astro';
+import DarkCta from '../../components/DarkCta.astro';
+import { getPostBySlug, getPublishedPosts } from '../../lib/db';
+import { cachePublic } from '../../lib/cache';
+import { formatDate } from '../../lib/text';
+
+export const prerender = false;
+
+const post = await getPostBySlug(Astro.params.slug ?? '');
+if (!post || !post.body_html) return Astro.rewrite('/404');
+cachePublic(Astro);
+
+const others = (await getPublishedPosts(20)).filter((p) => p.id !== post.id).slice(0, 4);
+const url = new URL(`/blog/${post.slug}`, Astro.site).toString();
+const titleLines = post.title.split(': ');
+const description = post.seo_description || `${post.title} — notes from the Altara journal.`;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    datePublished: post.published_on,
+    image: new URL(post.cover_image_url, Astro.site).toString(),
+    author: post.author ? { '@type': 'Person', name: post.author } : undefined,
+    publisher: { '@type': 'Organization', name: 'Altara' },
+    mainEntityOfPage: url,
+  },
+];
+---
+
+<SiteLayout title={`${post.title} — Altara`} description={description} image={post.cover_image_url} jsonLd={jsonLd}>
+  <section class="hero hero--page hero--center" style={`background-image:url('${post.cover_image_url}');background-position:${post.hero_position};`}>
+    <div class="hero-content">
+      <h1>
+        {titleLines.map((line, i) => (i < titleLines.length - 1 ? <Fragment>{line}:<br /></Fragment> : line))}
+      </h1>
+    </div>
+    <HeroMist />
+  </section>
+
+  <section class="article-section reveal">
+    <div class="container">
+      <div class="article-layout">
+        <div class="article-body">
+          <span class="article-meta">{formatDate(post.published_on)}{post.author && ` · By ${post.author}`}</span>
+
+          <Fragment set:html={post.body_html} />
+
+          <div class="article-share">
+            <span class="article-share-label">Love This? Share It</span>
+            <div class="article-share-links">
+              <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noopener" aria-label="Share on Facebook">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                </svg>
+              </a>
+              <a href={`https://wa.me/?text=${encodeURIComponent(`${post.title} — ${url}`)}`} target="_blank" rel="noopener" aria-label="Share on WhatsApp">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 20l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+                  ></path>
+                </svg>
+              </a>
+              <a href={`mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(`Thought you'd like this read: ${url}`)}`} aria-label="Share by email">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                  <path d="M3 7l9 6 9-6"></path>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <aside class="article-sidebar">
+          <h3 class="article-sidebar-heading">Related Journal Posts</h3>
+          <div class="article-sidebar-list">
+            {others.map((o) => (
+              <a href={o.body_html ? `/blog/${o.slug}` : '#'} class="article-sidebar-item">
+                <div class="article-sidebar-thumb">
+                  <img src={o.cover_image_url} alt={o.cover_image_alt || o.title} loading="lazy" />
+                </div>
+                <div class="article-sidebar-content">
+                  <h3>{o.title}</h3>
+                  <span class="article-sidebar-date">{formatDate(o.published_on)}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+          <a href="/blog" class="btn btn-outline-green">View All Journal Posts</a>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <DarkCta image="/assets/images/image/Lhuentse dzong.webp" />
+</SiteLayout>

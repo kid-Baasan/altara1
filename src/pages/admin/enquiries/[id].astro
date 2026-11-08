@@ -1,0 +1,54 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { getEnquiry, markEnquiryRead } from '../../../lib/db';
+
+export const prerender = false;
+
+const id = Number(Astro.params.id);
+const enquiry = Number.isInteger(id) && id > 0 ? await getEnquiry(id) : null;
+if (!enquiry) return Astro.rewrite('/404');
+
+// Opening an enquiry marks it read.
+if (!enquiry.is_read) await markEnquiryRead(enquiry.id);
+
+const date = new Date(enquiry.created_at.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { dateStyle: 'long', timeStyle: 'short' });
+---
+
+<AdminLayout title={`Enquiry from ${enquiry.name}`}>
+  <p><a href="/admin/enquiries" class="text-link">&larr; All enquiries</a></p>
+  <h1 class="mt-3 font-display text-3xl text-ink">Enquiry from {enquiry.name}</h1>
+  <p class="text-sm text-muted">Received {date}</p>
+
+  <dl class="mt-6 grid max-w-2xl gap-px border border-line bg-line text-sm sm:grid-cols-[10rem_1fr]">
+    <dt class="bg-offwhite px-4 py-3 font-bold text-ink">Name</dt>
+    <dd class="bg-white px-4 py-3">{enquiry.name}</dd>
+    <dt class="bg-offwhite px-4 py-3 font-bold text-ink">Email</dt>
+    <dd class="bg-white px-4 py-3"><a href={`mailto:${enquiry.email}`} class="text-link">{enquiry.email}</a></dd>
+    <dt class="bg-offwhite px-4 py-3 font-bold text-ink">Phone</dt>
+    <dd class="bg-white px-4 py-3">{enquiry.phone || <span class="text-muted">Not given</span>}</dd>
+    <dt class="bg-offwhite px-4 py-3 font-bold text-ink">Home country</dt>
+    <dd class="bg-white px-4 py-3">{enquiry.country || <span class="text-muted">Not given</span>}</dd>
+    <dt class="bg-offwhite px-4 py-3 font-bold text-ink">Preferred dates</dt>
+    <dd class="bg-white px-4 py-3">{enquiry.preferred_dates || <span class="text-muted">Not given</span>}</dd>
+    <dt class="bg-offwhite px-4 py-3 font-bold text-ink">Purpose</dt>
+    <dd class="bg-white px-4 py-3">{enquiry.purpose || <span class="text-muted">Not given</span>}</dd>
+    <dt class="bg-offwhite px-4 py-3 font-bold text-ink">Travellers</dt>
+    <dd class="bg-white px-4 py-3">{enquiry.travellers ?? <span class="text-muted">Not given</span>}</dd>
+    <dt class="bg-offwhite px-4 py-3 font-bold text-ink">Tour</dt>
+    <dd class="bg-white px-4 py-3">
+      {
+        enquiry.tour_id ? (
+          <>
+            {enquiry.tour_title} · <a href={`/admin/tours/${enquiry.tour_id}/edit`} class="text-link">Edit tour</a>
+          </>
+        ) : (
+          <span class="text-muted">General enquiry (or the tour was deleted)</span>
+        )
+      }
+    </dd>
+    <dt class="bg-offwhite px-4 py-3 font-bold text-ink">Message</dt>
+    <dd class="whitespace-pre-wrap bg-white px-4 py-3">{enquiry.message}</dd>
+  </dl>
+
+  <p class="mt-6"><a href={`mailto:${enquiry.email}?subject=${encodeURIComponent('Your Altara enquiry')}`} class="btn btn-solid">Reply by email</a></p>
+</AdminLayout>

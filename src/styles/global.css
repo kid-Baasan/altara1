@@ -1,0 +1,73 @@
+@import "tailwindcss";
+@import "@fontsource-variable/josefin-sans";
+@import "@fontsource/league-gothic";
+
+/* Admin-only styles (the public site uses Altara's own /style.css). Same palette as the public site. */
+@theme {
+  --color-accent: #b08d57;
+  --color-accent-dark: #8b6b3d;
+  --color-dark: #16302a;
+  --color-ink: #0e1512;
+  --color-body: #54534d;
+  --color-muted: #948f82;
+  --color-line: #c9c2b0;
+  --color-offwhite: #fafaf8;
+  --font-display: 'League Gothic', 'Arial Narrow', Impact, sans-serif;
+  --font-sans: 'Josefin Sans Variable', 'Josefin Sans', 'Helvetica Neue', Arial, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-offwhite);
+    color: var(--color-body);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  .text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+    transition: color 200ms ease;
+  }
+  .text-link:hover { color: var(--color-accent-dark); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+    padding: 0.85rem 1.8rem;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
+  }
+  .btn-solid { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+  .btn-solid:hover { background: var(--color-accent-dark); border-color: var(--color-accent-dark); }
+  .btn-ghost { color: var(--color-ink); border-color: var(--color-ink); background: #fff; }
+  .btn-ghost:hover { background: var(--color-ink); color: #fff; }
+}

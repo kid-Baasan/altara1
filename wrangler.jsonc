@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "altara",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "altara-db",
+      // TODO: run `npx wrangler d1 create altara-db` and paste the returned database_id here.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Migration files live here (created with `npx wrangler d1 migrations create altara-db <name>`).
+      "migrations_dir": "migrations"
+    }
+  ],
+  // Uploaded tour photos. Locally this is simulated on disk; nothing is created online.
+  // TODO (before deploying): run `npx wrangler r2 bucket create altara-media`.
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "altara-media" }]
+}

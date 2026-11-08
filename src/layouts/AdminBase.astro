@@ -1,0 +1,24 @@
+---
+// Bare HTML shell for every admin page: never indexed, no public header or footer.
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} | Altara Admin</title>
+    <link rel="icon" href="/assets/images/logo/site-icon.svg" type="image/svg+xml" />
+  </head>
+  <body class="min-h-screen bg-offwhite text-body">
+    <slot />
+  </body>
+</html>

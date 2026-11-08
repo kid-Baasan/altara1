@@ -1,0 +1,353 @@
+---
+// The tour editor, grouped into sections that mirror the public tour page. It posts back to the page that rendered
+// it; the page validates on the server and re-renders this form with the typed values and field errors.
+import type { TourCategory } from '../../lib/categories-db';
+import { districts } from '../../data/districts';
+import type { FormErrors, TourFormValues } from '../../lib/tour-form';
+import AdminFormAssets from './AdminFormAssets.astro';
+import FactRow from './FactRow.astro';
+import FaqRow from './FaqRow.astro';
+import ItineraryRow from './ItineraryRow.astro';
+import ListRow from './ListRow.astro';
+
+interface Props {
+  values: TourFormValues;
+  categories: TourCategory[];
+  errors?: FormErrors;
+  submitLabel?: string;
+}
+
+const { values, categories, errors = {}, submitLabel = 'Save tour' } = Astro.props;
+const errorCount = Object.keys(errors).length;
+const group = 'border border-line bg-white p-5 sm:p-7';
+const legend = 'font-display text-2xl text-ink';
+---
+
+<AdminFormAssets />
+
+<form method="post" data-admin-form class="max-w-4xl space-y-8" novalidate>
+  {
+    errorCount > 0 && (
+      <div role="alert" class="border border-red-700 bg-red-50 p-4 text-sm text-red-800">
+        Please fix the {errorCount === 1 ? '1 problem' : `${errorCount} problems`} marked below. Nothing has been saved yet.
+      </div>
+    )
+  }
+
+  <!-- 1. Basic info -->
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>1. Basic info</legend>
+    <div class="grid gap-5 sm:grid-cols-2">
+      <label class="block sm:col-span-2">
+        <span class="field-label">Title <b class="text-red-700">*</b></span>
+        <input name="title" type="text" required maxlength="150" value={values.title} data-title aria-invalid={errors.title ? 'true' : undefined} class="field" />
+        {errors.title && <span class="field-error">{errors.title}</span>}
+      </label>
+      <label class="block sm:col-span-2">
+        <span class="field-label">Slug (the page address)</span>
+        <input name="slug" type="text" maxlength="120" value={values.slug} data-slug data-auto={values.slug ? 'false' : 'true'} aria-invalid={errors.slug ? 'true' : undefined} class="field" />
+        <span class="field-hint">Filled in from the title. The page lives at /tours/your-slug. Changing it changes the public URL.</span>
+        {errors.slug && <span class="field-error">{errors.slug}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Category <b class="text-red-700">*</b></span>
+        <select name="category" class="field" aria-invalid={errors.category ? 'true' : undefined}>
+          {categories.map((c) => <option value={c.slug} selected={values.category === c.slug}>{c.label}</option>)}
+        </select>
+        <span class="field-hint">Decides which category page lists this tour. <a href="/admin/categories" class="underline">Manage categories</a></span>
+        {errors.category && <span class="field-error">{errors.category}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Duration (days) <b class="text-red-700">*</b></span>
+        <input name="duration_days" type="number" min="1" max="365" step="1" value={values.duration_days} aria-invalid={errors.duration_days ? 'true' : undefined} class="field" />
+        <span class="field-hint">Shown as "5 Days / 4 Nights".</span>
+        {errors.duration_days && <span class="field-error">{errors.duration_days}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Highest altitude (card)</span>
+        <input name="max_altitude" type="text" maxlength="20" value={values.max_altitude} placeholder="4,210m" aria-invalid={errors.max_altitude ? 'true' : undefined} class="field" />
+        <span class="field-hint">Optional. Shown with a mountain icon on the tour card.</span>
+        {errors.max_altitude && <span class="field-error">{errors.max_altitude}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Order on the page</span>
+        <input name="sort_order" type="number" min="0" max="9999" step="1" value={values.sort_order} aria-invalid={errors.sort_order ? 'true' : undefined} class="field" />
+        <span class="field-hint">Lower numbers come first within a category.</span>
+        {errors.sort_order && <span class="field-error">{errors.sort_order}</span>}
+      </label>
+      <label class="block sm:col-span-2">
+        <span class="field-label">Hero summary</span>
+        <textarea name="summary" rows="2" maxlength="400" aria-invalid={errors.summary ? 'true' : undefined} class="field">{values.summary}</textarea>
+        <span class="field-hint">The line under the title at the top of the tour page. Also the default meta description.</span>
+        {errors.summary && <span class="field-error">{errors.summary}</span>}
+      </label>
+      <label class="flex items-start gap-3 text-sm font-semibold text-ink sm:col-span-2">
+        <input type="checkbox" name="has_page" checked={values.has_page} class="mt-1 h-5 w-5 accent-[var(--color-accent)]" />
+        <span>
+          This tour has its own detail page
+          <span class="field-hint font-normal">Untick to show only the card on its category page; clicking it scrolls to the enquiry form instead.</span>
+        </span>
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- 2. Media -->
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>2. Cover photo</legend>
+    <div data-preview-wrap class="flex flex-wrap items-start gap-4 sm:flex-nowrap">
+      <img data-preview-img src={values.cover_image_url || undefined} alt="" referrerpolicy="no-referrer" class="h-28 w-44 shrink-0 bg-line object-cover" hidden={!values.cover_image_url} />
+      <div class="min-w-0 flex-1 space-y-4">
+        <label class="block">
+          <span class="field-label">Image path or URL</span>
+          <input name="cover_image_url" type="text" inputmode="url" maxlength="2000" value={values.cover_image_url} data-preview placeholder="/assets/images/image/taktshang.webp" aria-invalid={errors.cover_image_url ? 'true' : undefined} class="field" />
+          <span class="field-hint">Used for the card and the page hero. Any file in the site's /assets/images/image/ folder works, or upload a new one.</span>
+          {errors.cover_image_url && <span class="field-error">{errors.cover_image_url}</span>}
+        </label>
+        <div>
+          <label class="upload-btn js-controls" hidden>
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" data-upload class="sr-only" />
+            Upload from device
+          </label>
+          <span data-upload-status role="status" class="field-hint"></span>
+        </div>
+        <label class="block">
+          <span class="field-label">Alt text</span>
+          <input name="cover_image_alt" type="text" maxlength="200" value={values.cover_image_alt} aria-invalid={errors.cover_image_alt ? 'true' : undefined} class="field" />
+          {errors.cover_image_alt && <span class="field-error">{errors.cover_image_alt}</span>}
+        </label>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="block">
+            <span class="field-label">Hero crop</span>
+            <input name="hero_position" type="text" maxlength="40" value={values.hero_position} placeholder="center 40%" aria-invalid={errors.hero_position ? 'true' : undefined} class="field" />
+            <span class="field-hint">CSS background-position for the page hero.</span>
+            {errors.hero_position && <span class="field-error">{errors.hero_position}</span>}
+          </label>
+          <label class="block">
+            <span class="field-label">Card crop</span>
+            <input name="card_position" type="text" maxlength="40" value={values.card_position} placeholder="(default)" aria-invalid={errors.card_position ? 'true' : undefined} class="field" />
+            <span class="field-hint">Optional crop for the tour card.</span>
+            {errors.card_position && <span class="field-error">{errors.card_position}</span>}
+          </label>
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- 3. Trip facts -->
+  <fieldset class={group} data-repeater>
+    <legend class={`${legend} px-2`}>3. Trip facts</legend>
+    <p class="field-hint mb-4">The icon tiles at the top of the page (destinations, season, altitude, meals…).</p>
+    {errors.facts && <p class="field-error mb-3">{errors.facts}</p>}
+    <div data-rows class="space-y-4">
+      {
+        values.facts.map((f, i) => (
+          <FactRow icon={f.icon} label={f.label} value={f.value} errors={{ icon: errors[`facts.${i}.icon`], label: errors[`facts.${i}.label`], value: errors[`facts.${i}.value`] }} />
+        ))
+      }
+    </div>
+    <template><FactRow /></template>
+    <button type="button" data-action="add" class="js-controls btn btn-ghost mt-4 !px-4 !py-2 !text-xs" hidden>+ Add fact</button>
+    <label class="mt-5 block">
+      <span class="field-label">Note under the facts</span>
+      <textarea name="facts_note" rows="2" maxlength="400" aria-invalid={errors.facts_note ? 'true' : undefined} class="field">{values.facts_note}</textarea>
+      {errors.facts_note && <span class="field-error">{errors.facts_note}</span>}
+    </label>
+  </fieldset>
+
+  <!-- 4. Overview and highlights -->
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>4. Overview and highlights</legend>
+    <div class="space-y-5">
+      <label class="block">
+        <span class="field-label">Overview heading</span>
+        <input name="overview_title" type="text" maxlength="120" value={values.overview_title} placeholder="Tour Overview" aria-invalid={errors.overview_title ? 'true' : undefined} class="field" />
+        {errors.overview_title && <span class="field-error">{errors.overview_title}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Overview</span>
+        <textarea name="overview" rows="8" maxlength="10000" aria-invalid={errors.overview ? 'true' : undefined} class="field">{values.overview}</textarea>
+        <span class="field-hint">Separate paragraphs with a blank line. Links: [Tariff page](/tariff)</span>
+        {errors.overview && <span class="field-error">{errors.overview}</span>}
+      </label>
+      <div data-repeater>
+        <p class="field-label">Highlights</p>
+        {errors.highlights && <p class="field-error mb-2">{errors.highlights}</p>}
+        <div data-rows class="mt-2 space-y-2">
+          {values.highlights.map((item, i) => <ListRow name="highlights" value={item} error={errors[`highlights.${i}`]} />)}
+        </div>
+        <template><ListRow name="highlights" /></template>
+        <button type="button" data-action="add" class="js-controls btn btn-ghost mt-3 !px-4 !py-2 !text-xs" hidden>+ Add highlight</button>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- 5. Itinerary -->
+  <fieldset class={group} data-repeater>
+    <legend class={`${legend} px-2`}>5. Itinerary</legend>
+    <p class="field-hint mb-4">One row per day. Day numbers follow the order of the rows.</p>
+    {errors.itinerary && <p class="field-error mb-3">{errors.itinerary}</p>}
+    <div data-rows class="repeater-rows space-y-4">
+      {
+        values.itinerary.map((d, i) => (
+          <ItineraryRow
+            title={d.title}
+            description={d.description}
+            driving={d.driving}
+            elevation={d.elevation}
+            attractions={d.attractions}
+            overnight={d.overnight}
+            errors={{
+              title: errors[`itinerary.${i}.title`],
+              description: errors[`itinerary.${i}.description`],
+              driving: errors[`itinerary.${i}.driving`],
+              elevation: errors[`itinerary.${i}.elevation`],
+              attractions: errors[`itinerary.${i}.attractions`],
+              overnight: errors[`itinerary.${i}.overnight`],
+            }}
+          />
+        ))
+      }
+    </div>
+    <template><ItineraryRow /></template>
+    <button type="button" data-action="add" class="js-controls btn btn-ghost mt-4 !px-4 !py-2 !text-xs" hidden>+ Add day</button>
+  </fieldset>
+
+  <!-- 6. Packing, map -->
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>6. Packing list and districts</legend>
+    <div class="space-y-5">
+      <label class="block">
+        <span class="field-label">Packing heading</span>
+        <input name="pack_title" type="text" maxlength="150" value={values.pack_title} placeholder="What To Pack For The Trek" aria-invalid={errors.pack_title ? 'true' : undefined} class="field" />
+        {errors.pack_title && <span class="field-error">{errors.pack_title}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Packing text</span>
+        <textarea name="pack_text" rows="4" maxlength="5000" aria-invalid={errors.pack_text ? 'true' : undefined} class="field">{values.pack_text}</textarea>
+        <span class="field-hint">Leave empty to hide the section.</span>
+        {errors.pack_text && <span class="field-error">{errors.pack_text}</span>}
+      </label>
+      <div>
+        <p class="field-label">Districts on this tour</p>
+        <p class="field-hint">Highlighted on the map. Leave all unticked to hide the map.</p>
+        {errors.districts && <p class="field-error mt-1">{errors.districts}</p>}
+        <div class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 md:grid-cols-4">
+          {
+            districts.map((d) => (
+              <label class="flex items-center gap-2 text-sm text-ink">
+                <input type="checkbox" name="district" value={d.name} checked={values.districts.includes(d.name)} class="h-4 w-4 accent-[var(--color-accent)]" />
+                {d.name}
+              </label>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- 7. Inclusions / exclusions -->
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>7. Included and excluded</legend>
+    <div class="grid gap-8 md:grid-cols-2">
+      {
+        (
+          [
+            { key: 'inclusions', label: 'Trip cost includes', items: values.inclusions },
+            { key: 'exclusions', label: 'Trip cost excludes', items: values.exclusions },
+            { key: 'extras', label: 'Optional third list', items: values.extras },
+          ] as const
+        ).map((list) => (
+          <div data-repeater>
+            <p class="field-label">{list.label}</p>
+            {list.key === 'extras' && (
+              <label class="mt-2 block">
+                <span class="sr-only">Heading of the third list</span>
+                <input name="extras_title" type="text" maxlength="100" value={values.extras_title} placeholder="Heading, e.g. Trek Cost Includes" aria-invalid={errors.extras_title ? 'true' : undefined} class="field" />
+                {errors.extras_title && <span class="field-error">{errors.extras_title}</span>}
+              </label>
+            )}
+            {errors[list.key] && <p class="field-error mb-2">{errors[list.key]}</p>}
+            <div data-rows class="mt-2 space-y-2">
+              {list.items.map((item, i) => <ListRow name={list.key} value={item} error={errors[`${list.key}.${i}`]} />)}
+            </div>
+            <template><ListRow name={list.key} /></template>
+            <button type="button" data-action="add" class="js-controls btn btn-ghost mt-3 !px-4 !py-2 !text-xs" hidden>+ Add item</button>
+          </div>
+        ))
+      }
+    </div>
+    <label class="mt-5 block">
+      <span class="field-label">Note under the lists</span>
+      <input name="inclusions_note" type="text" maxlength="400" value={values.inclusions_note} aria-invalid={errors.inclusions_note ? 'true' : undefined} class="field" />
+      <span class="field-hint">Leave all lists empty to hide the section.</span>
+      {errors.inclusions_note && <span class="field-error">{errors.inclusions_note}</span>}
+    </label>
+  </fieldset>
+
+  <!-- 8. FAQs -->
+  <fieldset class={group} data-repeater>
+    <legend class={`${legend} px-2`}>8. Frequently asked questions</legend>
+    <p class="field-hint mb-4">Shown as an accordion. Leave empty to hide the section.</p>
+    {errors.faqs && <p class="field-error mb-3">{errors.faqs}</p>}
+    <div data-rows class="space-y-4">
+      {values.faqs.map((f, i) => <FaqRow question={f.question} answer={f.answer} errors={{ question: errors[`faqs.${i}.question`], answer: errors[`faqs.${i}.answer`] }} />)}
+    </div>
+    <template><FaqRow /></template>
+    <button type="button" data-action="add" class="js-controls btn btn-ghost mt-4 !px-4 !py-2 !text-xs" hidden>+ Add question</button>
+  </fieldset>
+
+  <!-- 9. Cost -->
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>9. Package cost</legend>
+    <div class="space-y-5">
+      <label class="block">
+        <span class="field-label">Heading</span>
+        <input name="cost_title" type="text" maxlength="100" value={values.cost_title} aria-invalid={errors.cost_title ? 'true' : undefined} class="field" />
+        {errors.cost_title && <span class="field-error">{errors.cost_title}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Text</span>
+        <textarea name="cost_text" rows="4" maxlength="3000" aria-invalid={errors.cost_text ? 'true' : undefined} class="field">{values.cost_text}</textarea>
+        <span class="field-hint">Altara quotes by enquiry, so there is no price field. Links: [Tariff page](/tariff). Leave empty to hide the section.</span>
+        {errors.cost_text && <span class="field-error">{errors.cost_text}</span>}
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- 10. SEO -->
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>10. SEO</legend>
+    <div class="space-y-5">
+      <label class="block">
+        <span class="field-label">SEO title</span>
+        <input name="seo_title" type="text" maxlength="60" value={values.seo_title} data-count="60" aria-invalid={errors.seo_title ? 'true' : undefined} class="field" />
+        <span class="field-hint">Leave empty for "Tour title — Altara". <output data-counter class="font-bold">{values.seo_title.length} / 60</output></span>
+        {errors.seo_title && <span class="field-error">{errors.seo_title}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Meta description</span>
+        <textarea name="seo_description" rows="3" maxlength="160" data-count="160" aria-invalid={errors.seo_description ? 'true' : undefined} class="field">{values.seo_description}</textarea>
+        <span class="field-hint">Leave empty to use the hero summary. <output data-counter class="font-bold">{values.seo_description.length} / 160</output></span>
+        {errors.seo_description && <span class="field-error">{errors.seo_description}</span>}
+      </label>
+    </div>
+  </fieldset>
+
+  <!-- 11. Publishing -->
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>11. Publishing</legend>
+    <label class="block">
+      <span class="field-label">Status</span>
+      <select name="status" class="field !w-auto" aria-invalid={errors.status ? 'true' : undefined}>
+        <option value="draft" selected={values.status !== 'published'}>Draft (hidden from the public)</option>
+        <option value="published" selected={values.status === 'published'}>Published</option>
+      </select>
+      {errors.status && <span class="field-error">{errors.status}</span>}
+    </label>
+  </fieldset>
+
+  <div class="flex flex-wrap items-center gap-4">
+    <button type="submit" class="btn btn-solid">{submitLabel}</button>
+    <a href="/admin/tours" class="text-link">Cancel</a>
+  </div>
+</form>

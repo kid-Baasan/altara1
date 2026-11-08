@@ -1,0 +1,43 @@
+---
+import RowControls from './RowControls.astro';
+import { factIconKeys } from '../../data/icons';
+
+interface Props {
+  icon?: string;
+  label?: string;
+  value?: string;
+  errors?: { icon?: string; label?: string; value?: string };
+}
+
+const { icon = factIconKeys[0], label = '', value = '', errors = {} } = Astro.props;
+const names: Record<string, string> = {
+  pin: 'Location pin', sun: 'Sun (season)', mountain: 'Mountain (altitude)', bag: 'Bag (accommodation)',
+  meal: 'Meals', truck: 'Vehicle (transport)', clock: 'Clock (duration)', difficulty: 'Difficulty',
+};
+---
+
+<div data-row class="border border-line bg-offwhite p-4">
+  <div class="mb-3 flex items-center justify-between gap-3">
+    <span class="text-xs font-bold uppercase tracking-[0.16em] text-accent-dark">Trip fact</span>
+    <RowControls />
+  </div>
+  <div class="grid gap-3 sm:grid-cols-[11rem_1fr_2fr]">
+    <label class="block">
+      <span class="field-label">Icon</span>
+      <select name="fact_icon" class="field" aria-invalid={errors.icon ? 'true' : undefined}>
+        {factIconKeys.map((k) => <option value={k} selected={k === icon}>{names[k] ?? k}</option>)}
+      </select>
+      {errors.icon && <span class="field-error">{errors.icon}</span>}
+    </label>
+    <label class="block">
+      <span class="field-label">Label</span>
+      <input name="fact_label" type="text" maxlength="40" value={label} placeholder="Best Season" aria-invalid={errors.label ? 'true' : undefined} class="field" />
+      {errors.label && <span class="field-error">{errors.label}</span>}
+    </label>
+    <label class="block">
+      <span class="field-label">Value</span>
+      <input name="fact_value" type="text" maxlength="150" value={value} placeholder="March–May &amp; September–November" aria-invalid={errors.value ? 'true' : undefined} class="field" />
+      {errors.value && <span class="field-error">{errors.value}</span>}
+    </label>
+  </div>
+</div>

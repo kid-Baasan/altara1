@@ -1,0 +1,58 @@
+---
+// Shared body for the Cultural / Trekking / Luxury tour-grid pages. The tours come from the database.
+import SiteLayout from '../layouts/SiteLayout.astro';
+import HeroMist from './HeroMist.astro';
+import TourCard from './TourCard.astro';
+import DarkCta from './DarkCta.astro';
+import { categoryPath, type TourCategory } from '../lib/categories-db';
+import type { Tour } from '../lib/db';
+import { cachePublic } from '../lib/cache';
+
+interface Props {
+  category: TourCategory;
+  tours: Tour[];
+}
+
+const { category, tours } = Astro.props;
+const c = category;
+cachePublic(Astro);
+const path = categoryPath(c.slug);
+const heroClass = c.slug === 'cultural' ? 'hero hero--cultural hero--page hero--center' : 'hero hero--page hero--center';
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: new URL('/', Astro.site).toString() },
+      { '@type': 'ListItem', position: 2, name: c.label, item: new URL(path, Astro.site).toString() },
+    ],
+  },
+];
+---
+
+<SiteLayout title={`${c.label} — Altara`} description={c.description} image={c.hero_image} jsonLd={jsonLd}>
+  <section class={heroClass} style={`background-image:url('${c.hero_image}');background-position:${c.hero_position};`}>
+    <div class="hero-content">
+      <h1>{c.label}</h1>
+    </div>
+    <HeroMist />
+  </section>
+
+  <section class="tour-section reveal">
+    <div class="container">
+      <div class="tour-head">
+        <h2>{c.heading}</h2>
+        {c.lede && <p>{c.lede}</p>}
+      </div>
+      {
+        tours.length === 0 ? (
+          <p class="tour-note">New itineraries are being added — get in touch and we will shape one around you.</p>
+        ) : (
+          <div class="tour-grid">{tours.map((tour) => <TourCard tour={tour} bareAltitude={c.slug === 'luxury'} />)}</div>
+        )
+      }
+    </div>
+  </section>
+
+  <DarkCta image={c.cta_image} text={c.cta_text || undefined} />
+</SiteLayout>

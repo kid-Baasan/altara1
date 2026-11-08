@@ -1,0 +1,22 @@
+/* Additions for the database-backed parts of the site (enquiry feedback). style.css stays untouched. */
+.form-notice{
+  margin:0 0 22px;
+  padding:14px 18px;
+  font-size:14px;
+  letter-spacing:0.03em;
+  border-left:3px solid var(--color-accent-gold);
+  background:rgba(176,141,87,0.1);
+  color:var(--color-primary-dark);
+}
+.form-notice--error{border-left-color:#a23a2e;background:rgba(162,58,46,0.08);color:#7a2a21;}
+.field-error-text{display:block;margin-top:6px;font-size:12px;color:#a23a2e;letter-spacing:0.02em;}
+.hp-field{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
+
+/* Videos page: responsive 16:9 YouTube embeds in the same card rhythm as the journal grid. */
+.video-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px 24px;margin-top:8px;}
+.video-card{margin:0;}
+.video-frame{position:relative;aspect-ratio:16/9;background:var(--color-black-green);overflow:hidden;}
+.video-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.video-card figcaption{margin-top:12px;font-size:14px;font-weight:600;letter-spacing:0.05em;color:var(--color-primary-dark);line-height:1.4;}
+@media (max-width:900px){.video-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:600px){.video-grid{grid-template-columns:1fr;}}

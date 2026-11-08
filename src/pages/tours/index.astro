@@ -1,0 +1,345 @@
+---
+// All Tours — every published tour with filters (style, length, search, sort).
+// Server-rendered from the URL so it works without JavaScript (chips are real links, the form is a GET form).
+// A small script below upgrades it: filters apply instantly, in place, with no page reload.
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import HeroMist from '../../components/HeroMist.astro';
+import TourCard from '../../components/TourCard.astro';
+import DarkCta from '../../components/DarkCta.astro';
+import { getPublishedTours } from '../../lib/db';
+import { listCategories } from '../../lib/categories-db';
+import { DURATIONS, SORTS, applyFilters, filterHref, readFilters } from '../../lib/tour-filter';
+import { cachePublic } from '../../lib/cache';
+
+export const prerender = false;
+
+const [allTours, categories] = await Promise.all([getPublishedTours(), listCategories()]);
+const f = readFilters(Astro.url, categories.map((c) => c.slug));
+const shown = applyFilters(allTours, f);
+const shownIds = new Set(shown.map((t) => t.id));
+// Cards are rendered in the current sort order; the script re-sorts using data-order (featured position).
+const ordered = applyFilters(allTours, { ...f, category: '', duration: '', q: '' });
+const featuredIndex = new Map(allTours.map((t, i) => [t.id, i]));
+const labelOf = (slug: string) => categories.find((c) => c.slug === slug)?.label ?? '';
+const shortLabel = (slug: string) => labelOf(slug).replace(/ Tours?$/i, '');
+const countIn = (slug: string) => allTours.filter((t) => t.category === slug).length;
+const filtered = Boolean(f.category || f.duration || f.q);
+
+// Free-text searches would create endless cache keys, so only the plain filter views are edge-cached.
+if (!f.q) cachePublic(Astro);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: new URL('/', Astro.site).toString() },
+      { '@type': 'ListItem', position: 2, name: 'All Tours', item: new URL('/tours', Astro.site).toString() },
+    ],
+  },
+];
+---
+
+<SiteLayout
+  title="All Tours — Altara"
+  description="Browse every Altara journey through Bhutan — cultural, trekking, festival and luxury — and filter by style or length to find the one that fits."
+  image="/assets/images/image/taktshang.webp"
+  jsonLd={jsonLd}
+  noindex={Boolean(f.q)}
+>
+  <section class="hero hero--page hero--center" style="background-image:url('/assets/images/image/taktshang.webp');background-position:center 68%;">
+    <div class="hero-content">
+      <h1>All Tours</h1>
+    </div>
+    <HeroMist />
+  </section>
+
+  <section class="tour-section tours-all" data-tour-filter>
+    <div class="container">
+      <div class="tour-head">
+        <h2>Find Your Journey</h2>
+        <p>Every itinerary is a starting point — we shape each one around your dates, pace and interests.</p>
+      </div>
+
+      <form class="tour-filters" method="get" action="/tours" role="search" aria-label="Filter tours">
+        <div class="tour-filters-bar">
+          {f.category && <input type="hidden" name="category" value={f.category} />}
+          {f.duration && <input type="hidden" name="duration" value={f.duration} />}
+          <label class="tour-search">
+            <span class="visually-hidden">Search tours</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-3.5-3.5"></path>
+            </svg>
+            <input type="search" name="q" value={f.q} placeholder="Search by name or place — Paro, Bumthang…" maxlength="80" autocomplete="off" />
+            <button type="button" class="tour-search-clear" aria-label="Clear search" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+            </button>
+          </label>
+          <div class="tour-sort" data-sort>
+            <label class="visually-hidden" for="tour-sort-select">Sort tours</label>
+            <select name="sort" id="tour-sort-select">
+              {SORTS.map((s) => <option value={s.value} selected={f.sort === s.value}>{s.label}</option>)}
+            </select>
+          </div>
+          <button type="submit" class="btn btn-solid-gold tour-apply">Apply</button>
+        </div>
+
+        <div class="tour-filters-row">
+          <div class="tour-filters-group">
+            <span class="tour-filters-label" id="f-style">Style</span>
+            <div class="tour-chips" role="group" aria-labelledby="f-style">
+              <a href={filterHref(f, { category: '' })} data-filter="category" data-value="" class:list={['tour-chip', { 'is-active': !f.category }]} aria-pressed={!f.category}>
+                All<span>{allTours.length}</span>
+              </a>
+              {
+                categories.map((c) => (
+                  <a href={filterHref(f, { category: c.slug })} data-filter="category" data-value={c.slug} class:list={['tour-chip', { 'is-active': f.category === c.slug }]} aria-pressed={f.category === c.slug}>
+                    {c.label.replace(/ Tours?$/i, '')}
+                    <span>{countIn(c.slug)}</span>
+                  </a>
+                ))
+              }
+            </div>
+          </div>
+          <div class="tour-filters-group tour-filters-group--seg">
+            <span class="tour-filters-label" id="f-length">Length</span>
+            <div class="tour-chips" role="group" aria-labelledby="f-length">
+              <a href={filterHref(f, { duration: '' })} data-filter="duration" data-value="" class:list={['tour-chip', { 'is-active': !f.duration }]} aria-pressed={!f.duration}>Any</a>
+              {
+                DURATIONS.map((d) => (
+                  <a
+                    href={filterHref(f, { duration: d.value })}
+                    data-filter="duration"
+                    data-value={d.value}
+                    data-min={d.test(0) ? 0 : d.test(6) ? 6 : 10}
+                    data-max={d.value === 'short' ? 5 : d.value === 'medium' ? 9 : 999}
+                    class:list={['tour-chip', { 'is-active': f.duration === d.value }]}
+                    aria-pressed={f.duration === d.value}
+                  >
+                    {d.label}
+                  </a>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+
+        <p class="tour-result-line" aria-live="polite">
+          <span>
+            Showing <strong data-count>{shown.length}</strong> of {allTours.length} journeys<span data-notes>{f.category && <> in <strong>{labelOf(f.category)}</strong></>}{f.q && <> matching “{f.q}”</>}</span>
+          </span>
+          <a href="/tours" class="tour-clear" data-clear hidden={!filtered}>Clear filters</a>
+        </p>
+      </form>
+
+      <div class="tour-note tours-empty" data-empty hidden={shown.length > 0}>
+        No journeys match those filters. <a href="/tours">Clear filters</a> or <a href="#enquire">tell us what you have in mind</a> and we will design it for you.
+      </div>
+
+      <div class="tour-grid" data-grid>
+        {
+          ordered.map((tour) => (
+            <TourCard
+              tour={tour}
+              label={shortLabel(tour.category)}
+              hidden={!shownIds.has(tour.id)}
+              data-category={tour.category}
+              data-days={tour.duration_days}
+              data-title={tour.title.toLowerCase()}
+              data-search={`${tour.title} ${tour.summary} ${tour.districts.join(' ')}`.toLowerCase()}
+              data-order={featuredIndex.get(tour.id)}
+            />
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <DarkCta image="/assets/images/image/taktshang.webp" />
+</SiteLayout>
+
+<script>
+  // Instant filtering: no reload. The URL is kept in sync (replaceState) so any view can be shared or bookmarked.
+  const root = document.querySelector<HTMLElement>('[data-tour-filter]');
+  if (root) {
+    const grid = root.querySelector<HTMLElement>('[data-grid]')!;
+    const cards = Array.from(grid.querySelectorAll<HTMLElement>('.tour-card'));
+    const chips = Array.from(root.querySelectorAll<HTMLAnchorElement>('[data-filter]'));
+    const form = root.querySelector<HTMLFormElement>('form')!;
+    const search = form.querySelector<HTMLInputElement>('input[name="q"]')!;
+    // Cast via unknown: the Cloudflare worker types shadow some DOM typings in this project.
+    const sortSel = form.querySelector('select[name="sort"]') as unknown as { value: string; addEventListener: HTMLElement['addEventListener'] };
+    const countEl = root.querySelector<HTMLElement>('[data-count]')!;
+    const notesEl = root.querySelector<HTMLElement>('[data-notes]')!;
+    const clearEl = root.querySelector<HTMLElement>('[data-clear]')!;
+    const emptyEl = root.querySelector<HTMLElement>('[data-empty]')!;
+    const clearSearchBtn = form.querySelector<HTMLElement>('.tour-search-clear')!;
+    const sortWrap = form.querySelector<HTMLElement>('[data-sort]')!;
+    form.querySelector<HTMLElement>('.tour-apply')?.setAttribute('hidden', '');
+    form.querySelectorAll('input[type="hidden"]').forEach((i) => i.remove());
+
+    const state = {
+      category: chips.find((c) => c.dataset.filter === 'category' && c.classList.contains('is-active'))?.dataset.value ?? '',
+      duration: chips.find((c) => c.dataset.filter === 'duration' && c.classList.contains('is-active'))?.dataset.value ?? '',
+      q: search.value.trim(),
+      sort: sortSel.value,
+    };
+    type Key = 'category' | 'duration';
+    const chipFor = (k: Key, v: string) => chips.find((c) => c.dataset.filter === k && c.dataset.value === v);
+
+    const sorters: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
+      featured: (a, b) => Number(a.dataset.order) - Number(b.dataset.order),
+      shortest: (a, b) => Number(a.dataset.days) - Number(b.dataset.days) || Number(a.dataset.order) - Number(b.dataset.order),
+      longest: (a, b) => Number(b.dataset.days) - Number(a.dataset.days) || Number(a.dataset.order) - Number(b.dataset.order),
+      az: (a, b) => (a.dataset.title ?? '').localeCompare(b.dataset.title ?? ''),
+    };
+
+    function apply() {
+      const q = state.q.toLowerCase();
+      const dur = chipFor('duration', state.duration);
+      const min = Number(dur?.dataset.min ?? 0);
+      const max = Number(dur?.dataset.max ?? 9999);
+      let n = 0;
+      cards.sort(sorters[state.sort] ?? sorters.featured).forEach((card) => {
+        const days = Number(card.dataset.days);
+        const ok =
+          (!state.category || card.dataset.category === state.category) &&
+          (!state.duration || (days >= min && days <= max)) &&
+          (!q || (card.dataset.search ?? '').includes(q));
+        card.hidden = !ok;
+        if (ok) n++;
+        grid.appendChild(card);
+      });
+
+      chips.forEach((c) => {
+        const on = c.dataset.value === state[c.dataset.filter as Key];
+        c.classList.toggle('is-active', on);
+        c.setAttribute('aria-pressed', String(on));
+      });
+      countEl.textContent = String(n);
+      const catLabel = state.category ? chipFor('category', state.category)?.childNodes[0]?.textContent?.trim() : '';
+      notesEl.textContent = '';
+      if (catLabel) {
+        notesEl.appendChild(document.createTextNode(' in '));
+        const s = document.createElement('strong');
+        s.textContent = catLabel;
+        notesEl.appendChild(s);
+      }
+      if (state.q) notesEl.appendChild(document.createTextNode(` matching “${state.q}”`));
+      const isFiltered = Boolean(state.category || state.duration || state.q);
+      clearEl.hidden = !isFiltered;
+      emptyEl.hidden = n > 0;
+      clearSearchBtn.hidden = !state.q;
+
+      const p = new URLSearchParams();
+      if (state.category) p.set('category', state.category);
+      if (state.duration) p.set('duration', state.duration);
+      if (state.q) p.set('q', state.q);
+      if (state.sort !== 'featured') p.set('sort', state.sort);
+      history.replaceState(null, '', p.toString() ? `?${p}` : location.pathname);
+    }
+
+    chips.forEach((c) =>
+      c.addEventListener('click', (e) => {
+        e.preventDefault();
+        state[c.dataset.filter as Key] = c.dataset.value ?? '';
+        apply();
+      }),
+    );
+    search.addEventListener('input', () => {
+      state.q = search.value.trim();
+      apply();
+    });
+    sortSel.addEventListener('change', () => {
+      state.sort = sortSel.value;
+      apply();
+    });
+    clearSearchBtn.addEventListener('click', () => {
+      search.value = '';
+      state.q = '';
+      apply();
+      search.focus();
+    });
+
+    // Custom sort dropdown (button + listbox) built from the native <select>, which stays as the source of truth.
+    const opts = Array.from(sortWrap.querySelectorAll<HTMLOptionElement>('option')).map((o) => ({ value: o.value, label: o.textContent ?? '' }));
+    sortWrap.classList.add('is-enhanced');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'tour-dd-btn';
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML =
+      '<span><small>Sort</small><b></b></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+    const current = btn.querySelector('b')!;
+    current.style.fontWeight = '600';
+    const menu = document.createElement('ul');
+    menu.className = 'tour-dd-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.setAttribute('aria-label', 'Sort tours');
+    menu.hidden = true;
+    const items = opts.map((o) => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.dataset.value = o.value;
+      li.textContent = o.label;
+      li.addEventListener('click', () => choose(o.value));
+      menu.appendChild(li);
+      return li;
+    });
+    sortWrap.appendChild(btn);
+    sortWrap.appendChild(menu);
+
+    let focusIdx = 0;
+    const paintDropdown = () => {
+      items.forEach((li, i) => {
+        li.setAttribute('aria-selected', String(li.dataset.value === state.sort));
+        li.classList.toggle('is-focus', i === focusIdx);
+      });
+      current.textContent = opts.find((o) => o.value === state.sort)?.label ?? '';
+    };
+    const setOpen = (open: boolean) => {
+      menu.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+      if (open) {
+        focusIdx = Math.max(0, opts.findIndex((o) => o.value === state.sort));
+        paintDropdown();
+      }
+    };
+    function choose(value: string) {
+      state.sort = value;
+      sortSel.value = value;
+      paintDropdown();
+      setOpen(false);
+      apply();
+      btn.focus();
+    }
+    btn.addEventListener('click', () => setOpen(Boolean(menu.hidden)));
+    btn.addEventListener('keydown', (e) => {
+      if (['ArrowDown', 'ArrowUp'].includes(e.key) && menu.hidden) {
+        e.preventDefault();
+        setOpen(true);
+      } else if (!menu.hidden) {
+        if (e.key === 'ArrowDown') { e.preventDefault(); focusIdx = (focusIdx + 1) % items.length; paintDropdown(); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); focusIdx = (focusIdx - 1 + items.length) % items.length; paintDropdown(); }
+        else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(opts[focusIdx].value); }
+        else if (e.key === 'Escape' || e.key === 'Tab') setOpen(false);
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (!sortWrap.contains(e.target as unknown as Node)) setOpen(false);
+    });
+    paintDropdown();
+    form.addEventListener('submit', (e) => e.preventDefault());
+    root.querySelectorAll<HTMLAnchorElement>('[data-clear], [data-empty] a[href="/tours"]').forEach((a) =>
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        state.category = state.duration = state.q = '';
+        search.value = '';
+        apply();
+      }),
+    );
+    apply();
+  }
+</script>

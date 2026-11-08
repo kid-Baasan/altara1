@@ -1,0 +1,123 @@
+﻿---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { deleteTour, duplicateTour, listAdminTours } from '../../../lib/db';
+import { listCategories } from '../../../lib/categories-db';
+
+export const prerender = false;
+
+let notice = '';
+let failed = false;
+
+// Duplicate and Delete are POSTs handled here (Astro's origin check blocks cross-site posts).
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = Number(form.get('id'));
+  const intent = form.get('intent');
+  if (Number.isInteger(id) && id > 0) {
+    try {
+      if (intent === 'duplicate') {
+        const newId = await duplicateTour(id);
+        if (newId) return Astro.redirect(`/admin/tours/${newId}/edit?saved=duplicated`);
+      } else if (intent === 'delete') {
+        await deleteTour(id);
+        return Astro.redirect('/admin/tours?deleted=1');
+      }
+    } catch (error) {
+      console.error('[admin/tours] action failed:', error);
+      failed = true;
+    }
+  }
+}
+
+if (Astro.url.searchParams.get('deleted')) notice = 'Tour deleted.';
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim().slice(0, 100);
+const categories = await listCategories();
+const active = categories.find((c) => c.slug === Astro.url.searchParams.get('category'))?.slug ?? '';
+const tours = await listAdminTours(q, active);
+const labels = Object.fromEntries(categories.map((c) => [c.slug, c.label]));
+const tabHref = (slug: string) => (slug ? `/admin/tours?category=${slug}` : '/admin/tours');
+const tab = 'inline-block border-b-2 px-4 py-2 text-sm font-bold uppercase tracking-wider';
+const date = (s: string) => new Date(s.replace(' ', 'T') + 'Z').toLocaleDateString('en-GB', { dateStyle: 'medium' });
+---
+
+<AdminLayout title="Tours">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="font-display text-3xl text-ink">Tours</h1>
+    <a href={active ? `/admin/tours/new?category=${active}` : '/admin/tours/new'} class="btn btn-solid">Add tour{active ? ` to ${labels[active]}` : ''}</a>
+  </div>
+
+  {notice && <p role="status" class="mt-5 border border-green-700 bg-green-50 p-3 text-sm text-green-900">{notice}</p>}
+  {failed && <p role="alert" class="mt-5 border border-red-700 bg-red-50 p-3 text-sm text-red-800">Something went wrong. Please try again.</p>}
+
+  <nav aria-label="Tour categories" class="mt-5 flex flex-wrap items-center gap-x-1 border-b border-line">
+    <a href={tabHref('')} class:list={[tab, active === '' ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']} aria-current={active === '' ? 'page' : undefined}>All</a>
+    {categories.map((c) => <a href={tabHref(c.slug)} class:list={[tab, active === c.slug ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink']} aria-current={active === c.slug ? 'page' : undefined}>{c.label}</a>)}
+    <a href="/admin/categories" class="ml-auto px-3 py-2 text-xs font-bold uppercase tracking-wider text-accent-dark hover:underline">Manage categories</a>
+  </nav>
+
+  <form method="get" role="search" class="mt-5 flex max-w-md gap-2">
+    <label for="q" class="sr-only">Search tours</label>
+    {active && <input type="hidden" name="category" value={active} />}
+    <input id="q" name="q" type="search" value={q} maxlength="100" placeholder="Search by title or slug" class="block w-full border border-line bg-white px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40" />
+    <button type="submit" class="btn btn-ghost !px-4 !py-2 !text-xs">Search</button>
+    {q && <a href="/admin/tours" class="self-center text-sm text-link">Clear</a>}
+  </form>
+
+  {
+    tours.length === 0 ? (
+      <p class="mt-6 border border-line bg-white p-6 text-sm text-muted">{q ? `No tours match "${q}".` : 'No tours yet. Add your first one.'}</p>
+    ) : (
+      <div class="mt-6 overflow-x-auto border border-line bg-white">
+        <table class="w-full min-w-[46rem] text-left text-sm">
+          <thead class="border-b border-line bg-offwhite text-xs uppercase tracking-wider text-muted">
+            <tr>
+              <th scope="col" class="px-4 py-3">Title</th>
+              <th scope="col" class="px-4 py-3">Status</th>
+              <th scope="col" class="px-4 py-3">Category</th>
+              <th scope="col" class="px-4 py-3">Duration</th>
+              <th scope="col" class="px-4 py-3">Updated</th>
+              <th scope="col" class="px-4 py-3"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-line align-top">
+            {tours.map((t) => (
+              <tr>
+                <td class="px-4 py-3">
+                  <a href={`/admin/tours/${t.id}/edit`} class="font-bold text-ink hover:text-accent-dark">{t.title}</a>
+                 
+                  <span class="block text-xs text-muted">/{t.slug}</span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class:list={['inline-block rounded px-2 py-0.5 text-xs font-bold uppercase', t.status === 'published' ? 'bg-green-100 text-green-900' : 'bg-gray-200 text-gray-800']}>
+                    {t.status}
+                  </span>
+                </td>
+                <td class="whitespace-nowrap px-4 py-3 capitalize">{labels[t.category] ?? t.category}{!t.has_page && <span class="block text-xs text-muted">Card only</span>}</td>
+                <td class="whitespace-nowrap px-4 py-3">{t.duration_days} {t.duration_days === 1 ? 'day' : 'days'}</td>
+                <td class="whitespace-nowrap px-4 py-3 text-muted">{date(t.updated_at)}</td>
+                <td class="px-4 py-3">
+                  <div class="flex flex-wrap items-start justify-end gap-x-4 gap-y-2">
+                    <a href={`/admin/tours/${t.id}/edit`} class="text-link">Edit</a>
+                    <form method="post">
+                      <input type="hidden" name="id" value={t.id} />
+                      <button name="intent" value="duplicate" class="text-link">Duplicate</button>
+                    </form>
+                    <details class="relative">
+                      <summary class="cursor-pointer list-none text-sm font-bold text-red-700 hover:underline [&::-webkit-details-marker]:hidden">Delete</summary>
+                      <form method="post" class="absolute right-0 z-10 mt-2 w-60 border border-red-700 bg-white p-3 text-left shadow-lg">
+                        <p class="text-xs text-body">Delete â€œ{t.title}â€ and its itinerary? This cannot be undone.</p>
+                        <input type="hidden" name="id" value={t.id} />
+                        <button name="intent" value="delete" class="mt-3 w-full bg-red-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-red-800">Yes, delete</button>
+                      </form>
+                    </details>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</AdminLayout>

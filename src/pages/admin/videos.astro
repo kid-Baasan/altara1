@@ -1,0 +1,96 @@
+---
+// Paste a YouTube channel link (or a single video link) to import videos. Channels import their latest uploads
+// (YouTube's public feed shows up to the 15 most recent); run it again later to pick up new ones.
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { deleteVideo, importVideos, listAdminVideos, setVideoVisible } from '../../lib/videos-db';
+import { fetchVideosFromLink, YouTubeError } from '../../lib/youtube';
+
+export const prerender = false;
+
+let notice = '';
+let error = '';
+let link = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const intent = String(form.get('intent') ?? '');
+  const id = Number(form.get('id'));
+  try {
+    if (intent === 'import') {
+      link = String(form.get('link') ?? '').trim().slice(0, 300);
+      if (!link) {
+        error = 'Paste a YouTube channel or video link.';
+      } else {
+        const found = await fetchVideosFromLink(link);
+        const added = await importVideos(found);
+        notice = added === 0 ? `Found ${found.length} video${found.length === 1 ? '' : 's'}, all already imported.` : `Imported ${added} new video${added === 1 ? '' : 's'} (found ${found.length}).`;
+        link = '';
+      }
+    } else if (Number.isInteger(id) && id > 0) {
+      if (intent === 'show' || intent === 'hide') await setVideoVisible(id, intent === 'show');
+      else if (intent === 'delete') await deleteVideo(id);
+    }
+  } catch (e) {
+    if (e instanceof YouTubeError) {
+      error = e.message;
+    } else {
+      console.error('[admin/videos] failed:', e);
+      error = 'Something went wrong. Please try again.';
+    }
+  }
+}
+
+const videos = await listAdminVideos();
+const date = (s: string) => (s ? new Date(`${s}T00:00:00Z`).toLocaleDateString('en-GB', { dateStyle: 'medium', timeZone: 'UTC' }) : '');
+---
+
+<AdminLayout title="Videos">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h1 class="font-display text-3xl text-ink">Videos</h1>
+    <a href="/videos" target="_blank" rel="noopener" class="text-link">View on site</a>
+  </div>
+
+  <form method="post" class="mt-6 max-w-3xl border border-line bg-white p-5">
+    <label for="link" class="block text-xs font-bold uppercase tracking-[0.14em] text-ink">YouTube channel or video link</label>
+    <div class="mt-2 flex flex-col gap-3 sm:flex-row">
+      <input id="link" name="link" type="text" value={link} maxlength="300" required placeholder="https://www.youtube.com/@yourchannel" class="block w-full border border-line bg-white px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/40" />
+      <button type="submit" name="intent" value="import" class="btn btn-solid whitespace-nowrap">Import videos</button>
+    </div>
+    <p class="mt-2 text-xs text-muted">
+      Works with @handle links, /channel/UC… links, and single video links (watch, youtu.be, shorts). A channel import brings in its
+      latest uploads; import again any time to add new ones. Videos already imported are never duplicated.
+    </p>
+  </form>
+
+  {notice && <p role="status" class="mt-5 max-w-3xl border border-green-700 bg-green-50 p-3 text-sm text-green-900">{notice}</p>}
+  {error && <p role="alert" class="mt-5 max-w-3xl border border-red-700 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+
+  {
+    videos.length === 0 ? (
+      <p class="mt-6 border border-line bg-white p-6 text-sm text-muted">No videos yet. Paste a link above.</p>
+    ) : (
+      <ul class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {videos.map((v) => (
+          <li class="border border-line bg-white">
+            <img src={`https://i.ytimg.com/vi/${v.youtube_id}/hqdefault.jpg`} alt="" loading="lazy" class:list={['aspect-video w-full object-cover', !v.is_visible && 'opacity-40']} />
+            <div class="p-4">
+              <p class="font-bold text-ink">{v.title}</p>
+              <p class="mt-1 text-xs text-muted">{v.channel_title}{v.published_at && ` · ${date(v.published_at)}`}</p>
+              <form method="post" class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <input type="hidden" name="id" value={v.id} />
+                {v.is_visible ? (
+                  <button name="intent" value="hide" class="text-link">Hide</button>
+                ) : (
+                  <button name="intent" value="show" class="text-link">Show</button>
+                )}
+                <a href={`https://www.youtube.com/watch?v=${v.youtube_id}`} target="_blank" rel="noopener" class="text-link">Watch</a>
+                <button name="intent" value="delete" class="text-sm font-bold text-red-700 hover:underline">Delete</button>
+              </form>
+              {!v.is_visible && <p class="mt-2 text-[11px] font-bold uppercase tracking-wider text-muted">Hidden from the site</p>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</AdminLayout>

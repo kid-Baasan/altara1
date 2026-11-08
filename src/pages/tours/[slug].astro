@@ -1,0 +1,471 @@
+---
+// Tour detail page. Every section is built from the tour's database record; a section with no data is skipped.
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import HeroMist from '../../components/HeroMist.astro';
+import TourMap from '../../components/TourMap.astro';
+import TourCard from '../../components/TourCard.astro';
+import Check from '../../components/Check.astro';
+import EnquiryForm from '../../components/EnquiryForm.astro';
+import { categoryPath, getCategoryBySlug } from '../../lib/categories-db';
+import { factIcons } from '../../data/icons';
+import { getRelatedTours, getTourBySlug } from '../../lib/db';
+import { cachePublic } from '../../lib/cache';
+import { dayNumber, durationLabel, inlineLinks, paragraphs } from '../../lib/text';
+
+export const prerender = false;
+
+const tour = await getTourBySlug(Astro.params.slug ?? '');
+if (!tour || !tour.has_page) return Astro.rewrite('/404');
+cachePublic(Astro);
+
+const cat = (await getCategoryBySlug(tour.category)) ?? { label: 'Tours', slug: tour.category, related_lede: '', enquire_noun: 'Tour' };
+const catPath = categoryPath(cat.slug);
+const related = await getRelatedTours(tour.category, tour.id);
+const noun = cat.enquire_noun; // "Tour" or "Trek"
+const pageTitle = tour.seo_title || `${tour.title} — Altara`;
+const description = tour.seo_description || tour.summary || `${tour.title}: a private ${durationLabel(tour.duration_days)} journey through Bhutan with Altara.`;
+const site = Astro.site!;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'TouristTrip',
+    name: tour.title,
+    description,
+    image: new URL(tour.cover_image_url, site).toString(),
+    touristType: cat.label,
+    provider: { '@type': 'TravelAgency', name: 'Altara', url: site.toString() },
+    itinerary: tour.itinerary.map((d) => ({ '@type': 'ListItem', position: d.day_number, name: d.title })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: new URL('/', site).toString() },
+      { '@type': 'ListItem', position: 2, name: cat.label, item: new URL(catPath, site).toString() },
+      { '@type': 'ListItem', position: 3, name: tour.title, item: new URL(`/tours/${tour.slug}`, site).toString() },
+    ],
+  },
+];
+
+const hasLists = tour.inclusions.length > 0 || tour.exclusions.length > 0 || tour.extras.length > 0;
+const heroStyle = `background-image:url('${tour.cover_image_url}');background-position:${tour.hero_position};`;
+const highlightsTitle = tour.category === 'trekking' ? 'Trek Highlights' : 'Tour Highlights';
+
+// Side panel: Duration plus the tour's Destinations fact.
+const asideFacts = tour.facts.filter((f) => f.value && /^destinations?$/i.test(f.label.trim())).slice(0, 1);
+
+// In-page section bar: only sections this tour actually has (ids match the sections below).
+type NavItem = { id: string; label: string };
+const sectionNav = [
+  tour.overview ? { id: 'overview', label: 'Overview' } : null,
+  tour.highlights.length > 0 ? { id: 'highlights', label: 'Highlights' } : null,
+  tour.itinerary.length > 0 ? { id: 'itinerary', label: 'Itinerary' } : null,
+  tour.pack_text ? { id: 'packing', label: tour.pack_title || 'What To Pack' } : null,
+  tour.districts.length > 0 ? { id: 'districts', label: 'Map' } : null,
+  hasLists ? { id: 'inclusions', label: 'Inclusions' } : null,
+  tour.faqs.length > 0 ? { id: 'faqs', label: 'FAQ' } : null,
+  tour.cost_text ? { id: 'cost', label: 'Cost' } : null,
+  { id: 'enquire', label: 'Enquire' },
+].filter((i): i is NavItem => i !== null);
+---
+
+<SiteLayout title={pageTitle} description={description} image={tour.cover_image_url} jsonLd={jsonLd}>
+  <!-- HERO -->
+  <section class="hero hero--page hero--tour" style={heroStyle}>
+    <div class="hero-content">
+      <span class="hero-tour-badge">{durationLabel(tour.duration_days)}</span>
+      <h1>{tour.title}</h1>
+    </div>
+    <HeroMist />
+  </section>
+
+  <!-- SECTION BAR -->
+  {
+    sectionNav.length > 3 && (
+      <nav class="tour-subnav" id="tourSubnav" aria-label="On this page">
+        <div class="tour-subnav-inner">
+          <ul>
+            {sectionNav.map((s) => (
+              <li>
+                <a href={`#${s.id}`} data-target={s.id}>
+                  {s.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <a href="#enquire" class="btn btn-solid-gold tour-subnav-cta">Book This {noun}</a>
+        </div>
+      </nav>
+    )
+  }
+
+  <div class="tour-body tour-body--aside">
+  <div class="tour-body-main">
+  <!-- TRIP FACTS -->
+  {
+    tour.facts.length > 0 && (
+      <section class="tour-facts-section reveal">
+        <div class="container">
+          <div class="tour-facts-card">
+            <div class="tour-facts-grid">
+              {tour.facts.map((fact) => (
+                <div class="tour-fact">
+                  <span class="tour-fact-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={factIcons[fact.icon] ?? ''} />
+                  </span>
+                  <span class="tour-fact-text">
+                    <span class="tour-fact-label">{fact.label}</span>
+                    <span class="tour-fact-value">{fact.value}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div class="tour-facts-actions">
+              <a href="#enquire" class="btn btn-solid-gold">Book This {noun}</a>
+              <a href={catPath} class="btn btn-outline-green">View All {cat.label}</a>
+            </div>
+          </div>
+          {tour.facts_note && <p class="tour-note">{tour.facts_note}</p>}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- OVERVIEW & HIGHLIGHTS -->
+  {
+    (tour.overview || tour.highlights.length > 0) && (
+      <section class="tour-content reveal">
+        <div class="container">
+          {tour.overview && (
+            <div class="tour-content-inner" id="overview">
+              <h2>{tour.overview_title || `${noun} Overview`}</h2>
+              {paragraphs(tour.overview).map((p) => <p set:html={inlineLinks(p)} />)}
+            </div>
+          )}
+          {tour.highlights.length > 0 && (
+            <div class="tour-content-inner" id="highlights">
+              <h2>{highlightsTitle}</h2>
+              <ul class="tour-highlights">
+                {tour.highlights.map((h) => (
+                  <li>
+                    <Check />
+                    {h}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ITINERARY -->
+  {
+    tour.itinerary.length > 0 && (
+      <section class="itinerary reveal" id="itinerary">
+        <div class="container">
+          <div class="itinerary-head">
+            <span class="eyebrow eyebrow--accent">Day By Day</span>
+            <h2>The Itinerary</h2>
+          </div>
+          <div class="itinerary-list">
+            {tour.itinerary.map((day) => (
+              <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">
+                  <span>Day {dayNumber(day.day_number)} — {day.title}</span>
+                  <span class="faq-icon" aria-hidden="true" />
+                </button>
+                <div class="faq-answer">
+                  <div class="day-detail">
+                    {(day.driving || day.elevation) && (
+                      <ul class="day-meta">
+                        {day.driving && (
+                          <li>
+                            <span class="day-meta-label">{/^trek\s*:/i.test(day.driving) ? 'Trek Duration' : 'Driving Duration'}</span>
+                            <span class="day-meta-value">{day.driving.replace(/^trek\s*:\s*/i, '')}</span>
+                          </li>
+                        )}
+                        {day.elevation && (
+                          <li>
+                            <span class="day-meta-label">Elevation</span>
+                            <span class="day-meta-value">{day.elevation}</span>
+                          </li>
+                        )}
+                      </ul>
+                    )}
+                    {paragraphs(day.description).map((p) => <p set:html={inlineLinks(p)} />)}
+                    {day.attractions.length > 0 && (
+                      <div class="day-attractions">
+                        <h4>Attractions</h4>
+                        <ul>
+                          {day.attractions.map((a) => (
+                            <li>
+                              <Check />
+                              {a}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {day.overnight && <p class="day-overnight">{day.overnight}</p>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- WHAT TO PACK -->
+  {
+    tour.pack_text && (
+      <section class="tour-content reveal" id="packing">
+        <div class="container">
+          <div class="tour-content-inner">
+            <h2>{tour.pack_title || 'What To Pack'}</h2>
+            {paragraphs(tour.pack_text).map((p) => <p set:html={inlineLinks(p)} />)}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- WHERE YOU'LL GO -->
+  {
+    tour.districts.length > 0 && (
+      <section class="tour-map-section reveal" id="districts">
+        <div class="container">
+          <div class="tour-map-head">
+            <span class="eyebrow eyebrow--accent">Where You'll Go</span>
+            <h2>Districts On This Tour</h2>
+          </div>
+          <div class="tour-map-card">
+            <TourMap active={tour.districts} />
+            <p class="tour-map-caption">
+              Districts on this tour: <strong>{tour.districts.join(' · ')}</strong>
+            </p>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- INCLUDED / EXCLUDED -->
+  {
+    hasLists && (
+      <section class="tour-content reveal" id="inclusions">
+        <div class="container">
+          <div class="tour-content-inner">
+            <h2>Included / Excluded In The Cost</h2>
+            <div class="tour-cost-columns">
+              <div>
+                <h3 class="tour-detail-subhead">Trip Cost Includes</h3>
+                <ul class="tour-highlights tour-highlights--stack">
+                  {tour.inclusions.map((item) => (
+                    <li>
+                      <Check />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 class="tour-detail-subhead">Trip Cost Excludes</h3>
+                <ul class="tour-excludes">
+                  {tour.exclusions.map((item) => (
+                    <li>
+                      <Check kind="cross" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {tour.extras.length > 0 && (
+                <div>
+                  <h3 class="tour-detail-subhead">{tour.extras_title || 'Also Included'}</h3>
+                  <ul class="tour-highlights tour-highlights--stack">
+                    {tour.extras.map((item) => (
+                      <li>
+                        <Check />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            {tour.inclusions_note && <p class="tour-note">{tour.inclusions_note}</p>}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- FAQ -->
+  {
+    tour.faqs.length > 0 && (
+      <section class="itinerary reveal" id="faqs">
+        <div class="container">
+          <div class="itinerary-head">
+            <span class="eyebrow eyebrow--accent">Good To Know</span>
+            <h2>Frequently Asked Questions</h2>
+          </div>
+          <div class="itinerary-list">
+            {tour.faqs.map((faq) => (
+              <div class="faq-item">
+                <button class="faq-question" aria-expanded="false">
+                  <span>{faq.question}</span>
+                  <span class="faq-icon" aria-hidden="true" />
+                </button>
+                <div class="faq-answer">
+                  <p set:html={inlineLinks(faq.answer)} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- COST -->
+  {
+    tour.cost_text && (
+      <section class="tour-cost reveal" id="cost">
+        <div class="container">
+          <div class="tour-cost-card">
+            <h3>{tour.cost_title || 'Package Cost'}</h3>
+            <p set:html={inlineLinks(tour.cost_text)} />
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ENQUIRE ABOUT THIS TOUR -->
+  <section class="tour-enquire reveal" id="enquire">
+    <div class="container">
+      <div class="tour-enquire-card">
+        <span class="eyebrow eyebrow--accent">Enquire About This {noun}</span>
+        <h2>{tour.title}</h2>
+        <p class="enquire-form-lede">
+          Fill out the form below and one of our travel designers will get back to you with availability and pricing for {tour.title} — or reach us directly on WhatsApp or email.
+        </p>
+        <EnquiryForm tour={{ slug: tour.slug, title: tour.title }} idPrefix="tour" anchor="enquiry-form" submitLabel="Submit Enquiry" />
+        <div class="tour-enquire-quick">
+          <a href="https://wa.me/9752333456" class="btn btn-outline-green" target="_blank" rel="noopener">WhatsApp Us</a>
+          <a href="mailto:hello@altara.travel" class="tour-enquire-email">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+              <path d="M3 7l9 6 9-6"></path>
+            </svg>
+            hello@altara.travel
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <aside class="tour-aside" aria-label="Trip summary">
+    <div class="tour-aside-card">
+      <ul class="tour-aside-facts">
+        <li>
+          <span class="tour-aside-label">Duration</span>
+          <span class="tour-aside-value">{durationLabel(tour.duration_days)}</span>
+        </li>
+        {asideFacts.map((fact) => (
+          <li>
+            <span class="tour-aside-label">{fact.label}</span>
+            <span class="tour-aside-value">{fact.value}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="tour-aside-note">Every journey is private and priced to your dates and style — send an enquiry and we reply with a tailored quote.</p>
+      <a href="#enquire" class="btn btn-solid-gold tour-aside-cta">Book This {noun}</a>
+      <div class="tour-aside-contact">
+        <a href="mailto:hello@altara.travel">hello@altara.travel</a>
+      </div>
+    </div>
+  </aside>
+  </div>
+
+  <!-- RELATED TOURS -->
+  {
+    related.length > 0 && (
+      <section class="tour-related reveal">
+        <div class="container">
+          <div class="tour-related-head">
+            <h2>Related Tours</h2>
+            <p>{cat.related_lede}</p>
+          </div>
+          <div class="tour-related-track-wrap">
+            <div class="tour-related-track" id="relatedToursTrack">
+              {related.map((r) => <TourCard tour={r} />)}
+            </div>
+            <button class="slider-arrow prev" id="relatedToursPrev" aria-label="Previous tour">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6"></path>
+              </svg>
+            </button>
+            <button class="slider-arrow next" id="relatedToursNext" aria-label="Next tour">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    )
+  }
+</SiteLayout>
+
+<script>
+  // Section bar: sits under the fixed header and slides up to the top while the header is hidden on scroll-down;
+  // the link for the section being read is highlighted.
+  const bar = document.getElementById('tourSubnav');
+  const header = document.getElementById('siteHeader');
+  if (bar && header) {
+    const setTop = () => {
+      const hidden = header.classList.contains('header-hidden');
+      document.documentElement.style.setProperty('--subnav-top', hidden ? '0px' : `${header.offsetHeight}px`);
+    };
+    setTop();
+    new MutationObserver(setTop).observe(header, { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('resize', setTop);
+
+    const links = Array.from(bar.querySelectorAll<HTMLAnchorElement>('a[data-target]'));
+    const targets = links
+      .map((a) => document.getElementById(a.dataset.target ?? ''))
+      .filter((el): el is HTMLElement => el !== null);
+
+    const list = bar.querySelector<HTMLElement>('ul');
+    function activate(id: string) {
+      links.forEach((a) => {
+        const on = a.dataset.target === id;
+        a.classList.toggle('is-active', on);
+        if (on) {
+          a.setAttribute('aria-current', 'true');
+          // Keep the active link visible when the bar scrolls sideways on small screens.
+          if (list && list.scrollWidth > list.clientWidth) list.scrollTo({ left: a.offsetLeft - 24, behavior: 'smooth' });
+        } else a.removeAttribute('aria-current');
+      });
+    }
+
+    // The section crossing the upper part of the viewport is the one being read.
+    const seen = new Map<string, boolean>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => seen.set(e.target.id, e.isIntersecting));
+        const current = targets.find((t) => seen.get(t.id));
+        activate(current ? current.id : '');
+      },
+      { rootMargin: '-30% 0px -60% 0px' },
+    );
+    targets.forEach((t) => io.observe(t));
+  }
+</script>

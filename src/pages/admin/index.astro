@@ -1,0 +1,59 @@
+﻿---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getDashboardCounts, listEnquiries } from '../../lib/db';
+
+export const prerender = false;
+
+const [counts, latest] = await Promise.all([getDashboardCounts(), listEnquiries(5)]);
+const stats = [
+  { label: 'Published tours', value: counts.published, href: '/admin/tours' },
+  { label: 'Draft tours', value: counts.drafts, href: '/admin/tours' },
+  { label: 'Journal posts', value: counts.posts, href: '/admin/posts' },
+  { label: 'Unread enquiries', value: counts.unread, href: '/admin/enquiries' },
+];
+const date = (s: string) => new Date(s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+---
+
+<AdminLayout title="Dashboard">
+  <h1 class="font-display text-3xl text-ink">Dashboard</h1>
+
+  <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {
+      stats.map((s) => (
+        <li>
+          <a href={s.href} class="block border border-line bg-white p-5 hover:border-accent">
+            <span class="block text-3xl font-semibold text-ink">{s.value}</span>
+            <span class="text-sm text-muted">{s.label}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <section class="mt-10" aria-labelledby="latest-heading">
+    <div class="flex items-center justify-between">
+      <h2 id="latest-heading" class="font-display text-lg font-semibold text-ink">Latest enquiries</h2>
+      <a href="/admin/enquiries" class="text-link">View all</a>
+    </div>
+    {
+      latest.length === 0 ? (
+        <p class="mt-4 border border-line bg-white p-6 text-sm text-muted">No enquiries yet.</p>
+      ) : (
+        <ul class="mt-4 divide-y divide-line border border-line bg-white">
+          {latest.map((e) => (
+            <li>
+              <a href={`/admin/enquiries/${e.id}`} class="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3 hover:bg-offwhite">
+                <span class={e.is_read ? '' : 'font-bold text-ink'}>
+                  {!e.is_read && <span class="mr-2 inline-block h-2 w-2 rounded-full bg-accent" aria-label="Unread" />}
+                  {e.name}
+                  <span class="font-normal text-muted"> Â· {e.tour_title ?? 'General enquiry'}</span>
+                </span>
+                <time class="text-xs text-muted">{date(e.created_at)}</time>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+</AdminLayout>

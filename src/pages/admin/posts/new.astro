@@ -1,0 +1,35 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import PostForm from '../../../components/admin/PostForm.astro';
+import { createPost } from '../../../lib/db';
+import { emptyPostValues, parsePostForm } from '../../../lib/post-form';
+import type { FormErrors } from '../../../lib/tour-form';
+
+export const prerender = false;
+
+let values = emptyPostValues();
+let errors: FormErrors = {};
+let failed = false;
+
+if (Astro.request.method === 'POST') {
+  const result = await parsePostForm(await Astro.request.formData());
+  values = result.values;
+  errors = result.errors;
+  if (result.input) {
+    try {
+      const id = await createPost(result.input);
+      return Astro.redirect(`/admin/posts/${id}/edit?saved=1`);
+    } catch (error) {
+      console.error('[admin/posts/new] save failed:', error);
+      failed = true;
+    }
+  }
+}
+---
+
+<AdminLayout title="Add post">
+  <p><a href="/admin/posts" class="text-link">&larr; All posts</a></p>
+  <h1 class="mt-3 mb-6 font-display text-3xl text-ink">Add post</h1>
+  {failed && <p role="alert" class="mb-6 max-w-4xl border border-red-700 bg-red-50 p-3 text-sm text-red-800">Something went wrong and the post was not saved. Your changes are still below: please try again.</p>}
+  <PostForm values={values} errors={errors} submitLabel="Create post" />
+</AdminLayout>

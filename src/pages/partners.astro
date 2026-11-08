@@ -1,0 +1,54 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import PartnerForm from '../components/PartnerForm.astro';
+
+export const prerender = false;
+
+const ways = [
+  { title: 'Travel Agents & Operators', text: 'Offer your clients private Bhutan journeys, designed and run by our team on the ground, with a clear trade rate and a single point of contact.' },
+  { title: 'Hotels & Lodges', text: 'List your property with a house that sends travelers who value quiet, character and service over volume.' },
+  { title: 'Guides, Drivers & Experiences', text: 'Join the small circle of local people we trust for our private itineraries, from cultural guides to craft workshops.' },
+];
+---
+
+<SiteLayout title="Partner With Us — Altara" description="Travel agents, operators, hotels and local specialists: work with Altara, a private-journey house built around Bhutan. Send us a proposal.">
+  <section class="hero hero--page hero--center"
+    style="background-image:url('/assets/images/image/Wangdue.webp');background-position:center 40%;">
+    <div class="hero-content">
+      <h1>Partner With Us</h1>
+    </div>
+    <div class="hero-mist" aria-hidden="true">
+      <div class="hero-mist-layer hero-mist-layer--1" style="background-image:url('/assets/images/cloud.webp');"></div>
+      <div class="hero-mist-layer hero-mist-layer--2" style="background-image:url('/assets/images/cloud.webp');"></div>
+    </div>
+  </section>
+
+  <section class="partner-intro reveal">
+    <div class="container">
+      <span class="eyebrow eyebrow--accent">For The Travel Trade</span>
+      <h2>Let's Work Together</h2>
+      <p>Altara designs every Bhutan journey by hand, around one traveler or family at a time. If you share that care,
+        we would like to hear from you &mdash; whether you send travelers, host them, or help us look after them.</p>
+      <div class="partner-ways">
+        {ways.map((w) => (
+          <div class="partner-way">
+            <h3>{w.title}</h3>
+            <p>{w.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="partner-form-section reveal">
+    <div class="container">
+      <div class="partner-form-card">
+        <span class="eyebrow eyebrow--accent">Send A Proposal</span>
+        <h2>Tell Us About Your Business</h2>
+        <p class="enquire-form-lede">Our partnerships team reads every proposal personally and replies within three
+          business days. Planning your own trip instead? <a href="/enquire">Enquire here</a>.</p>
+        <PartnerForm />
+      </div>
+    </div>
+  </section>
+</SiteLayout>

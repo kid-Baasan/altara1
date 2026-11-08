@@ -1,0 +1,28 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import HeroMist from '../components/HeroMist.astro';
+
+export const prerender = false;
+Astro.response.status = 404;
+---
+
+<SiteLayout title="Page not found — Altara" description="This page could not be found." noindex>
+  <section class="hero hero--page hero--center" style="background-image:url('/assets/images/image/taktshang.webp');background-position:center 40%;">
+    <div class="hero-content">
+      <h1>Page Not Found</h1>
+    </div>
+    <HeroMist />
+  </section>
+  <section class="tour-section">
+    <div class="container">
+      <div class="tour-head">
+        <h2>Lost In The Mountains</h2>
+        <p>The page you were looking for has moved or never existed. Try one of the paths below.</p>
+      </div>
+      <p style="text-align:center;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+        <a href="/" class="btn btn-solid-gold">Back Home</a>
+        <a href="/enquire" class="btn btn-outline-green">Enquire Now</a>
+      </p>
+    </div>
+  </section>
+</SiteLayout>

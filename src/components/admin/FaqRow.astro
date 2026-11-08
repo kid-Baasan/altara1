@@ -1,0 +1,28 @@
+---
+import RowControls from './RowControls.astro';
+
+interface Props {
+  question?: string;
+  answer?: string;
+  errors?: { question?: string; answer?: string };
+}
+
+const { question = '', answer = '', errors = {} } = Astro.props;
+---
+
+<div data-row class="border border-line bg-offwhite p-4">
+  <div class="mb-3 flex items-center justify-between gap-3">
+    <span class="text-xs font-bold uppercase tracking-[0.16em] text-accent-dark">Question</span>
+    <RowControls />
+  </div>
+  <label class="block">
+    <span class="field-label">Question</span>
+    <input name="faq_question" type="text" maxlength="250" value={question} aria-invalid={errors.question ? 'true' : undefined} class="field" />
+    {errors.question && <span class="field-error">{errors.question}</span>}
+  </label>
+  <label class="mt-3 block">
+    <span class="field-label">Answer</span>
+    <textarea name="faq_answer" rows="3" maxlength="2000" aria-invalid={errors.answer ? 'true' : undefined} class="field">{answer}</textarea>
+    {errors.answer && <span class="field-error">{errors.answer}</span>}
+  </label>
+</div>

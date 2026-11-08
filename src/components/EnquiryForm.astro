@@ -1,0 +1,389 @@
+---
+// Enquiry form in Altara's own form markup. It posts to the submitEnquiry Astro Action, which validates on the
+// server and saves to D1. Works without JavaScript: the page re-renders with the result.
+// The script at the bottom upgrades the arrival / departure date inputs to a calendar popover (native date inputs
+// without JavaScript).
+// Pages using it must be rendered on demand.
+import { actions, isInputError } from 'astro:actions';
+import { PURPOSES } from '../actions';
+
+interface Props {
+  /** Set on a tour page: the tour is linked to the enquiry and shown read-only. */
+  tour?: { slug: string; title: string };
+  idPrefix?: string;
+  anchor?: string;
+  submitLabel?: string;
+}
+
+const { tour, idPrefix = 'enquire', anchor = 'enquiry-form', submitLabel = 'Send Enquiry' } = Astro.props;
+const result = Astro.getActionResult(actions.submitEnquiry);
+const sent = !!result && !result.error;
+const fieldErrors: Record<string, string[] | undefined> = result?.error && isInputError(result.error) ? result.error.fields : {};
+const failed = !!result?.error && !isInputError(result.error);
+
+// Keep what the visitor typed when there are errors.
+const values: Record<string, string> = {};
+if (result?.error && Astro.request.method === 'POST') {
+  try {
+    for (const [key, value] of await Astro.request.clone().formData()) if (typeof value === 'string') values[key] = value;
+  } catch {
+    // Body not readable: show an empty form.
+  }
+}
+const id = (name: string) => `${idPrefix}-${name}`;
+const err = (name: string) => fieldErrors[name]?.[0];
+---
+
+{
+  sent ? (
+    <div class="form-notice" role="status" id={anchor}>
+      <strong>Thank you — your enquiry has been received.</strong> One of our travel designers will reply within one business day.
+    </div>
+  ) : (
+    <form class={`enquire-form${tour ? '' : ' enquire-form--box'}`} method="post" action={`${actions.submitEnquiry}#${anchor}`} id={anchor}>
+      {failed && (
+        <div class="form-notice form-notice--error" role="alert">
+          Sorry, something went wrong on our side. Please try again in a moment, or reach us on WhatsApp or email.
+        </div>
+      )}
+
+      <div class="hp-field" aria-hidden="true">
+        <label>Leave this field empty <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+      </div>
+
+      {tour ? (
+        <>
+          <div class="form-field">
+            <label for={id('tour')}>Tour</label>
+            <input type="text" id={id('tour')} value={tour.title} readonly />
+            <input type="hidden" name="tour" value={tour.slug} />
+            <span class="field-underline" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for={id('name')}>Full Name <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id={id('name')} name="name" placeholder="e.g. Sarah Johnson" autocomplete="name" required minlength="2" maxlength="100" value={values.name} aria-invalid={err('name') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('name') && <span class="field-error-text">{err('name')}</span>}
+            </div>
+            <div class="form-field">
+              <label for={id('email')}>Email Address <span class="req" aria-hidden="true">*</span></label>
+              <input type="email" id={id('email')} name="email" placeholder="e.g. sarah@example.com" autocomplete="email" required maxlength="200" value={values.email} aria-invalid={err('email') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('email') && <span class="field-error-text">{err('email')}</span>}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for={id('phone')}>Phone / WhatsApp <span class="req" aria-hidden="true">*</span></label>
+              <input type="tel" id={id('phone')} name="phone" required placeholder="e.g. +1 555 123 4567" autocomplete="tel" maxlength="30" value={values.phone} aria-invalid={err('phone') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('phone') && <span class="field-error-text">{err('phone')}</span>}
+            </div>
+            <div class="form-field">
+              <label for={id('country')}>Nationality <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id={id('country')} name="country" required placeholder="e.g. Australian" autocomplete="country-name" maxlength="80" value={values.country} />
+              <span class="field-underline" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field" data-date-field>
+              <label for={id('arrival')}>Arrival Date <span class="req" aria-hidden="true">*</span></label>
+              <input type="date" id={id('arrival')} name="arrival_date" required data-required value={values.arrival_date} aria-invalid={err('arrival_date') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('arrival_date') && <span class="field-error-text">{err('arrival_date')}</span>}
+            </div>
+            <div class="form-field" data-date-field>
+              <label for={id('departure')}>Departure Date <span class="req" aria-hidden="true">*</span></label>
+              <input type="date" id={id('departure')} name="departure_date" required data-required value={values.departure_date} aria-invalid={err('departure_date') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('departure_date') && <span class="field-error-text">{err('departure_date')}</span>}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for={id('travellers')}>Number Of Travelers <span class="req" aria-hidden="true">*</span></label>
+              <input type="number" id={id('travellers')} name="travellers" required min="1" max="50" placeholder="e.g. 2" value={values.travellers} aria-invalid={err('travellers') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('travellers') && <span class="field-error-text">{err('travellers')}</span>}
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for={id('message')}>Message <span class="req" aria-hidden="true">*</span></label>
+            <textarea
+              id={id('message')}
+              name="message"
+              maxlength="2000"
+              required
+              placeholder="e.g. We are a family of four, keen on gentle walks, local festivals and a few nights at a heritage lodge."
+              aria-invalid={err('message') ? 'true' : undefined}>{values.message}</textarea>
+            <span class="field-underline" />
+            {err('message') && <span class="field-error-text">{err('message')}</span>}
+          </div>
+          <button type="submit" class="btn btn-solid-gold">{submitLabel}</button>
+        </>
+      ) : (
+        <>
+          <div class="form-field">
+            <label for={id('purpose')}>What Can We Help With?</label>
+            <select id={id('purpose')} name="purpose">
+              {PURPOSES.map((p) => <option value={p} selected={values.purpose === p}>{p}</option>)}
+            </select>
+            <span class="field-underline" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for={id('name')}>Full Name <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id={id('name')} name="name" placeholder="e.g. Sarah Johnson" autocomplete="name" required minlength="2" maxlength="100" value={values.name} aria-invalid={err('name') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('name') && <span class="field-error-text">{err('name')}</span>}
+            </div>
+            <div class="form-field">
+              <label for={id('email')}>Email <span class="req" aria-hidden="true">*</span></label>
+              <input type="email" id={id('email')} name="email" placeholder="e.g. sarah@example.com" autocomplete="email" required maxlength="200" value={values.email} aria-invalid={err('email') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('email') && <span class="field-error-text">{err('email')}</span>}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label for={id('phone')}>Phone / WhatsApp <span class="req" aria-hidden="true">*</span></label>
+              <input type="tel" id={id('phone')} name="phone" required placeholder="e.g. +1 555 123 4567" autocomplete="tel" maxlength="30" value={values.phone} aria-invalid={err('phone') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('phone') && <span class="field-error-text">{err('phone')}</span>}
+            </div>
+            <div class="form-field">
+              <label for={id('country')}>Home Country <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id={id('country')} name="country" required placeholder="e.g. Australia" autocomplete="country-name" maxlength="80" value={values.country} />
+              <span class="field-underline" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for={id('dates')}>Preferred Travel Dates <span class="req" aria-hidden="true">*</span></label>
+              <input type="text" id={id('dates')} name="preferred_dates" placeholder="e.g. April 2027" required maxlength="100" value={values.preferred_dates} />
+              <span class="field-underline" />
+            </div>
+            <div class="form-field">
+              <label for={id('travellers')}>Number Of Travelers <span class="req" aria-hidden="true">*</span></label>
+              <input type="number" id={id('travellers')} name="travellers" required min="1" max="50" placeholder="e.g. 2" value={values.travellers} aria-invalid={err('travellers') ? 'true' : undefined} />
+              <span class="field-underline" />
+              {err('travellers') && <span class="field-error-text">{err('travellers')}</span>}
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for={id('message')}>Tell Us About Your Trip <span class="req" aria-hidden="true">*</span></label>
+            <textarea
+              id={id('message')}
+              name="message"
+              maxlength="2000"
+              required
+              placeholder="e.g. A slow, unhurried trip for two in spring, with time in monasteries and the high valleys."
+              aria-invalid={err('message') ? 'true' : undefined}>{values.message}</textarea>
+            <span class="field-underline" />
+            {err('message') && <span class="field-error-text">{err('message')}</span>}
+          </div>
+          <button type="submit" class="btn btn-solid-gold">{submitLabel}</button>
+        </>
+      )}
+    </form>
+  )
+}
+
+<script>
+  // Calendar popover for the arrival / departure inputs. The native inputs stay in the form (hidden),
+  // so the form submits exactly as before.
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const iso = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
+  const parse = (s: string) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    return m ? { y: Number(m[1]), m: Number(m[2]) - 1, d: Number(m[3]) } : null;
+  };
+  const pretty = (s: string) => {
+    const p = parse(s);
+    return p ? `${p.d} ${MONTHS[p.m].slice(0, 3)} ${p.y}` : '';
+  };
+  const now = new Date();
+  const todayIso = iso(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const fields = Array.from(document.querySelectorAll<HTMLElement>('[data-date-field]'));
+  let openPicker: { close: () => void } | null = null;
+
+  fields.forEach((field) => {
+    const input = field.querySelector('input') as HTMLInputElement;
+    const label = field.querySelector('label') as HTMLElement;
+    const isDeparture = input.name === 'departure_date';
+    const partner = () => fields.map((f) => f.querySelector('input') as HTMLInputElement).find((i) => i !== input) ?? null;
+
+    input.hidden = true;
+    // A hidden input can't be validated by the browser, so the form-submit check below handles "required" instead.
+    input.required = false;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'date-btn';
+    btn.setAttribute('aria-haspopup', 'dialog');
+    btn.setAttribute('aria-expanded', 'false');
+    if (input.getAttribute('aria-invalid') === 'true') btn.setAttribute('aria-invalid', 'true');
+    btn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="0"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span></span>';
+    const text = btn.querySelector('span') as HTMLElement;
+    const paintBtn = () => {
+      text.textContent = input.value ? pretty(input.value) : 'e.g. 10 Apr 2027';
+      text.classList.toggle('is-placeholder', !input.value);
+    };
+
+    const pop = document.createElement('div');
+    pop.className = 'cal';
+    pop.setAttribute('role', 'dialog');
+    pop.setAttribute('aria-label', isDeparture ? 'Choose departure date' : 'Choose arrival date');
+    pop.hidden = true;
+
+    // Button goes before the field's gold underline so the underline can animate on focus / open.
+    field.insertBefore(btn, field.querySelector('.field-underline'));
+    field.appendChild(pop);
+    label.addEventListener('click', (e) => {
+      e.preventDefault();
+      btn.focus();
+    });
+
+    let view = { y: now.getFullYear(), m: now.getMonth() };
+
+    // Earliest selectable day: today, or the arrival date when picking the departure.
+    const minIso = () => {
+      const other = isDeparture ? partner() : null;
+      return other && other.value && other.value > todayIso ? other.value : todayIso;
+    };
+
+    function render() {
+      const min = minIso();
+      const other = partner();
+      const arrival = isDeparture ? other?.value ?? '' : input.value;
+      const departure = isDeparture ? input.value : other?.value ?? '';
+      const first = new Date(view.y, view.m, 1);
+      const lead = (first.getDay() + 6) % 7; // Monday first
+      const days = new Date(view.y, view.m + 1, 0).getDate();
+      const cells: string[] = [];
+      for (let i = 0; i < lead; i++) cells.push('<span class="cal-blank"></span>');
+      for (let d = 1; d <= days; d++) {
+        const v = iso(view.y, view.m, d);
+        const cls = ['cal-day'];
+        if (v === todayIso) cls.push('is-today');
+        if (v === input.value) cls.push('is-selected');
+        else if (arrival && departure && v > arrival && v < departure) cls.push('in-range');
+        else if ((v === arrival || v === departure) && v !== input.value) cls.push('is-edge');
+        const off = v < min;
+        cells.push(
+          `<button type="button" class="${cls.join(' ')}" data-date="${v}" ${off ? 'disabled' : ''} aria-label="${d} ${MONTHS[view.m]} ${view.y}"${v === input.value ? ' aria-pressed="true"' : ''}>${d}</button>`,
+        );
+      }
+      const prevOff = view.y === now.getFullYear() && view.m === now.getMonth();
+      pop.innerHTML =
+        `<div class="cal-head"><button type="button" class="cal-nav" data-nav="-1" aria-label="Previous month" ${prevOff ? 'disabled' : ''}>` +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>' +
+        `<strong>${MONTHS[view.m]} ${view.y}</strong>` +
+        '<button type="button" class="cal-nav" data-nav="1" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div>' +
+        '<div class="cal-week" aria-hidden="true"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>' +
+        `<div class="cal-grid">${cells.join('')}</div>` +
+        '<div class="cal-foot"><button type="button" data-act="clear">Clear</button><button type="button" data-act="today">Today</button></div>';
+    }
+
+    function choose(v: string) {
+      input.value = v;
+      // A departure before a newly chosen arrival no longer makes sense.
+      const other = partner();
+      if (!isDeparture && other && other.value && other.value < v) {
+        other.value = '';
+        other.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      paintBtn();
+      close();
+      // Moving on: after picking an arrival, open the departure picker straight away.
+      if (!isDeparture) {
+        const next = fields.find((f) => f !== field)?.querySelector<HTMLButtonElement>('.date-btn');
+        if (next && !partner()?.value) next.click();
+      }
+    }
+
+    function open() {
+      openPicker?.close();
+      const start = parse(input.value) ?? parse(isDeparture ? partner()?.value ?? '' : '') ?? parse(minIso());
+      if (start) view = { y: start.y, m: start.m };
+      render();
+      pop.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      openPicker = { close };
+      (pop.querySelector('.is-selected, .is-today, .cal-day:not(:disabled)') as HTMLElement | null)?.focus();
+    }
+    function close() {
+      pop.hidden = true;
+      btn.setAttribute('aria-expanded', 'false');
+      if (openPicker && openPicker.close === close) openPicker = null;
+    }
+
+    btn.addEventListener('click', () => (pop.hidden ? open() : close()));
+    pop.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      const day = t.closest('[data-date]') as HTMLElement | null;
+      const nav = t.closest('[data-nav]') as HTMLElement | null;
+      const act = (t.closest('[data-act]') as HTMLElement | null)?.dataset.act;
+      if (day) choose(day.dataset.date ?? '');
+      else if (nav) {
+        const d = new Date(view.y, view.m + Number(nav.dataset.nav), 1);
+        view = { y: d.getFullYear(), m: d.getMonth() };
+        render();
+        (pop.querySelector(`[data-nav="${nav.dataset.nav}"]:not(:disabled)`) as HTMLElement | null)?.focus();
+      } else if (act === 'clear') {
+        input.value = '';
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        paintBtn();
+        close();
+      } else if (act === 'today' && todayIso >= minIso()) choose(todayIso);
+    });
+    field.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !pop.hidden) {
+        close();
+        btn.focus();
+      }
+    });
+    paintBtn();
+  });
+
+  // Required dates: stop the submit and point at the first empty one.
+  fields[0]?.closest('form')?.addEventListener('submit', (e) => {
+    let firstBad: HTMLElement | null = null;
+    fields.forEach((f) => {
+      const input = f.querySelector('input') as HTMLInputElement;
+      const btn = f.querySelector('.date-btn') as HTMLElement;
+      f.querySelector('.field-error-text.js-err')?.remove();
+      if (input.value) {
+        btn.removeAttribute('aria-invalid');
+        return;
+      }
+      btn.setAttribute('aria-invalid', 'true');
+      const msg = document.createElement('span');
+      msg.className = 'field-error-text js-err';
+      msg.textContent = 'Please choose a date.';
+      f.appendChild(msg);
+      firstBad ??= btn;
+    });
+    if (firstBad) {
+      e.preventDefault();
+      (firstBad as HTMLElement).focus();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (openPicker && !fields.some((f) => f.contains(e.target as Node))) openPicker.close();
+  });
+</script>

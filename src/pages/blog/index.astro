@@ -1,0 +1,57 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import HeroMist from '../../components/HeroMist.astro';
+import DarkCta from '../../components/DarkCta.astro';
+import { getPublishedPosts } from '../../lib/db';
+import { cachePublic } from '../../lib/cache';
+import { formatDate } from '../../lib/text';
+
+export const prerender = false;
+cachePublic(Astro);
+
+const posts = await getPublishedPosts(100);
+---
+
+<SiteLayout
+  title="Blog — Altara"
+  description="Festival dates, packing lists and valley diaries from the people who live and guide in Bhutan — the same notes we'd give a friend before they landed."
+  image="/assets/images/image/paro attractions header.webp"
+>
+  <section class="hero hero--page hero--center" style="background-image:url('/assets/images/image/paro attractions header.webp');background-position:center 40%;">
+    <div class="hero-content">
+      <h1>Blog</h1>
+    </div>
+    <HeroMist />
+  </section>
+
+  <section class="blog-section reveal">
+    <div class="container">
+      <div class="tour-head">
+        <h2>Stories From The Journal</h2>
+        <p>
+          Festival dates, packing lists and valley diaries from the people who live and guide here — the same notes we'd give a friend before they landed.
+        </p>
+      </div>
+      {
+        posts.length === 0 ? (
+          <p class="tour-note">New stories are on their way.</p>
+        ) : (
+          <div class="blog-grid">
+            {posts.map((post) => (
+              <a href={post.body_html ? `/blog/${post.slug}` : '#'} class="blog-card" style={`background-image:url('${post.cover_image_url}');`}>
+                <div class="bg" style={`background-image:url('${post.cover_image_url}');`} />
+                <div class="blog-card-body">
+                  <span class="blog-card-meta">{formatDate(post.published_on)}</span>
+                  <h3>{post.title}</h3>
+                  <span class="blog-card-link">Read More</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <DarkCta image="/assets/images/image/bumthang view1.webp" />
+</SiteLayout>

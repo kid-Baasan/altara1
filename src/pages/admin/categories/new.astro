@@ -1,0 +1,36 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import CategoryForm from '../../../components/admin/CategoryForm.astro';
+import { createCategory } from '../../../lib/categories-db';
+import { emptyCategoryValues, parseCategoryForm } from '../../../lib/category-form';
+import type { FormErrors } from '../../../lib/tour-form';
+
+export const prerender = false;
+
+let values = emptyCategoryValues();
+let errors: FormErrors = {};
+let failed = false;
+
+if (Astro.request.method === 'POST') {
+  const result = await parseCategoryForm(await Astro.request.formData());
+  values = result.values;
+  errors = result.errors;
+  if (result.input) {
+    try {
+      await createCategory(result.input);
+      // Straight on to adding the first tour in the new category.
+      return Astro.redirect(`/admin/tours/new?category=${result.input.slug}`);
+    } catch (error) {
+      console.error('[admin/categories/new] save failed:', error);
+      failed = true;
+    }
+  }
+}
+---
+
+<AdminLayout title="Add category">
+  <p><a href="/admin/categories" class="text-link">&larr; All categories</a></p>
+  <h1 class="mt-3 mb-6 font-display text-3xl text-ink">Add category</h1>
+  {failed && <p role="alert" class="mb-6 max-w-4xl border border-red-700 bg-red-50 p-3 text-sm text-red-800">Something went wrong and the category was not saved. Your changes are still below: please try again.</p>}
+  <CategoryForm values={values} errors={errors} submitLabel="Create category" />
+</AdminLayout>

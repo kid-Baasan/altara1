@@ -1,0 +1,17 @@
+---
+// Listing page for categories added in the admin (the original three keep /cultural-tours etc.).
+import TourCategoryPage from '../../../components/TourCategoryPage.astro';
+import { categoryPath, getCategoryBySlug } from '../../../lib/categories-db';
+import { getToursByCategory } from '../../../lib/db';
+
+export const prerender = false;
+
+const category = await getCategoryBySlug(Astro.params.slug ?? '');
+if (!category) return Astro.rewrite('/404');
+const path = categoryPath(category.slug);
+// The three originals live at /cultural-tours etc.; send visitors there rather than serving duplicate pages.
+if (path !== Astro.url.pathname.replace(/\/$/, '')) return Astro.redirect(path, 301);
+const tours = await getToursByCategory(category.slug);
+---
+
+<TourCategoryPage category={category} tours={tours} />

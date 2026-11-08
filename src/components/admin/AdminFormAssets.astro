@@ -1,0 +1,144 @@
+---
+// Shared styles and behaviour for the admin editors: repeater rows (add / remove / reorder), image upload and
+// preview, slug-from-title and character counters. Everything is progressive: the forms work without JavaScript.
+---
+
+<style is:global>
+  .field-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-ink); }
+  .field { margin-top: 0.4rem; display: block; width: 100%; border: 1px solid var(--color-line); background: #fff; padding: 0.6rem 0.8rem; font-size: 0.95rem; color: var(--color-ink); }
+  .field:focus { outline: 2px solid color-mix(in srgb, var(--color-accent) 60%, transparent); border-color: var(--color-accent); }
+  .field[aria-invalid='true'] { border-color: #b91c1c; background: #fef2f2; }
+  .field-hint { display: block; margin-top: 0.35rem; font-size: 12px; color: var(--color-muted); }
+  .field-error { display: block; margin-top: 0.35rem; font-size: 13px; font-weight: 600; color: #b91c1c; }
+  .upload-btn { display: inline-block; cursor: pointer; border: 1px solid var(--color-ink); padding: 0.45rem 0.9rem; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink); background: #fff; }
+  .upload-btn:hover, .upload-btn:focus-within { background: var(--color-accent); border-color: var(--color-accent); }
+  .row-btn { width: 2rem; height: 2rem; border: 1px solid var(--color-line); background: #fff; font-size: 0.9rem; line-height: 1; color: var(--color-ink); cursor: pointer; }
+  .row-btn:hover { border-color: var(--color-accent); }
+  /* Day numbers come from the row order, so they update on their own when rows move. */
+  .repeater-rows { counter-reset: day; }
+  .itinerary-row { counter-increment: day; }
+  .itinerary-row .day-label::before { content: 'Day ' counter(day); }
+  [data-counter].over { color: #b91c1c; }
+</style>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-admin-form]');
+
+  if (form) {
+    // Show the controls that need JavaScript.
+    form.querySelectorAll<HTMLElement>('.js-controls').forEach((el) => (el.hidden = false));
+
+    // --- Repeaters: add, remove, move up / down ---
+    form.addEventListener('click', (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]');
+      if (!button) return;
+      const repeater = button.closest<HTMLElement>('[data-repeater]');
+      const rows = repeater?.querySelector<HTMLElement>('[data-rows]');
+      if (!repeater || !rows) return;
+
+      const action = button.dataset.action;
+      if (action === 'add') {
+        const template = repeater.querySelector<HTMLTemplateElement>('template');
+        if (!template) return;
+        const fragment = template.content.cloneNode(true) as DocumentFragment;
+        fragment.querySelectorAll<HTMLElement>('.js-controls').forEach((el) => (el.hidden = false));
+        const row = fragment.firstElementChild as HTMLElement;
+        rows.appendChild(fragment);
+        row.querySelector<HTMLElement>('input, textarea')?.focus();
+        return;
+      }
+      const row = button.closest<HTMLElement>('[data-row]');
+      if (!row) return;
+      if (action === 'remove') row.remove();
+      const previous = row.previousElementSibling;
+      const next = row.nextElementSibling;
+      if (action === 'up' && previous) rows.insertBefore(row, previous);
+      if (action === 'down' && next) rows.insertBefore(next, row);
+      if (action === 'up' || action === 'down') button.focus();
+    });
+
+    // --- Upload from device: send the file to /admin/upload, then fill in the URL field ---
+    const MAX_BYTES = 5 * 1024 * 1024;
+    async function upload(file: File, urlInput: HTMLInputElement, status: HTMLElement | null) {
+      const say = (text: string, bad = false) => {
+        if (status) {
+          status.textContent = text;
+          status.style.color = bad ? '#b91c1c' : '';
+        }
+      };
+      if (file.size > MAX_BYTES) return say(`${file.name} is larger than 5 MB.`, true);
+      say(`Uploading ${file.name}…`);
+      const body = new FormData();
+      body.append('file', file);
+      try {
+        const response = await fetch('/admin/upload', { method: 'POST', body });
+        const data = (await response.json()) as { url?: string; error?: string };
+        if (!response.ok) return say(data.error ?? 'Upload failed.', true);
+        urlInput.value = data.url ?? '';
+        urlInput.dispatchEvent(new Event('input', { bubbles: true })); // refresh the preview
+        say('Uploaded.');
+      } catch {
+        say('Upload failed. Check your connection and try again.', true);
+      }
+    }
+
+    form.addEventListener('change', async (event) => {
+      const input = event.target as HTMLInputElement;
+      if (input.matches('[data-upload]') && input.files?.[0]) {
+        const wrap = input.closest<HTMLElement>('[data-preview-wrap]');
+        const urlInput = wrap?.querySelector<HTMLInputElement>('[data-preview]');
+        if (urlInput) await upload(input.files[0], urlInput, wrap?.querySelector<HTMLElement>('[data-upload-status]') ?? null);
+        input.value = '';
+      }
+          });
+
+    // --- Image previews (cover and gallery) ---
+    form.addEventListener('input', (event) => {
+      const input = event.target as HTMLInputElement;
+      if (!input.matches('[data-preview]')) return;
+      const wrap = input.closest<HTMLElement>('[data-preview-wrap]');
+      const img = wrap?.querySelector<HTMLImageElement>('[data-preview-img]');
+      if (!img) return;
+      const url = input.value.trim();
+      img.hidden = !url;
+      if (url) img.src = url;
+    });
+    form.addEventListener(
+      'error',
+      (event) => {
+        const img = event.target as HTMLElement;
+        if (img.matches('[data-preview-img]')) img.hidden = true;
+      },
+      true,
+    );
+
+    // --- Slug from title, until the slug is edited by hand ---
+    const title = form.querySelector<HTMLInputElement>('[data-title]');
+    const slug = form.querySelector<HTMLInputElement>('[data-slug]');
+    const slugify = (text: string) =>
+      text
+        .toLowerCase()
+        .normalize('NFKD')
+        .replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 120);
+    title?.addEventListener('input', () => {
+      if (slug && slug.dataset.auto !== 'false') slug.value = slugify(title.value);
+    });
+    slug?.addEventListener('input', () => (slug.dataset.auto = 'false'));
+
+    // --- Character counters ---
+    form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-count]').forEach((field) => {
+      const max = Number(field.dataset.count);
+      const output = field.closest('label')?.querySelector<HTMLElement>('[data-counter]');
+      if (!output) return;
+      const update = () => {
+        output.textContent = `${field.value.length} / ${max}`;
+        output.classList.toggle('over', field.value.length > max);
+      };
+      field.addEventListener('input', update);
+      update();
+    });
+  }
+</script>

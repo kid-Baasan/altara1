@@ -1,0 +1,124 @@
+---
+// The journal post editor. Posts back to the page that rendered it; the page validates on the server.
+import type { FormErrors } from '../../lib/tour-form';
+import type { PostFormValues } from '../../lib/post-form';
+import AdminFormAssets from './AdminFormAssets.astro';
+
+interface Props {
+  values: PostFormValues;
+  errors?: FormErrors;
+  submitLabel?: string;
+}
+
+const { values, errors = {}, submitLabel = 'Save post' } = Astro.props;
+const errorCount = Object.keys(errors).length;
+const group = 'border border-line bg-white p-5 sm:p-7';
+const legend = 'font-display text-2xl text-ink';
+---
+
+<AdminFormAssets />
+
+<form method="post" data-admin-form class="max-w-4xl space-y-8" novalidate>
+  {
+    errorCount > 0 && (
+      <div role="alert" class="border border-red-700 bg-red-50 p-4 text-sm text-red-800">
+        Please fix the {errorCount === 1 ? '1 problem' : `${errorCount} problems`} marked below. Nothing has been saved yet.
+      </div>
+    )
+  }
+
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>1. Post details</legend>
+    <div class="grid gap-5 sm:grid-cols-2">
+      <label class="block sm:col-span-2">
+        <span class="field-label">Title <b class="text-red-700">*</b></span>
+        <input name="title" type="text" required maxlength="200" value={values.title} data-title aria-invalid={errors.title ? 'true' : undefined} class="field" />
+        <span class="field-hint">A colon splits the article heading onto two lines ("Inside Tiger's Nest: What To Know").</span>
+        {errors.title && <span class="field-error">{errors.title}</span>}
+      </label>
+      <label class="block sm:col-span-2">
+        <span class="field-label">Slug (the page address)</span>
+        <input name="slug" type="text" maxlength="120" value={values.slug} data-slug data-auto={values.slug ? 'false' : 'true'} aria-invalid={errors.slug ? 'true' : undefined} class="field" />
+        <span class="field-hint">The article lives at /blog/your-slug.</span>
+        {errors.slug && <span class="field-error">{errors.slug}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Date <b class="text-red-700">*</b></span>
+        <input name="published_on" type="date" value={values.published_on} aria-invalid={errors.published_on ? 'true' : undefined} class="field" />
+        {errors.published_on && <span class="field-error">{errors.published_on}</span>}
+      </label>
+      <label class="block">
+        <span class="field-label">Author</span>
+        <input name="author" type="text" maxlength="100" value={values.author} aria-invalid={errors.author ? 'true' : undefined} class="field" />
+        {errors.author && <span class="field-error">{errors.author}</span>}
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>2. Cover photo</legend>
+    <div data-preview-wrap class="flex flex-wrap items-start gap-4 sm:flex-nowrap">
+      <img data-preview-img src={values.cover_image_url || undefined} alt="" referrerpolicy="no-referrer" class="h-28 w-44 shrink-0 bg-line object-cover" hidden={!values.cover_image_url} />
+      <div class="min-w-0 flex-1 space-y-4">
+        <label class="block">
+          <span class="field-label">Image path or URL</span>
+          <input name="cover_image_url" type="text" inputmode="url" maxlength="2000" value={values.cover_image_url} data-preview placeholder="/assets/images/image/punakha dzong.webp" aria-invalid={errors.cover_image_url ? 'true' : undefined} class="field" />
+          {errors.cover_image_url && <span class="field-error">{errors.cover_image_url}</span>}
+        </label>
+        <div>
+          <label class="upload-btn js-controls" hidden>
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" data-upload class="sr-only" />
+            Upload from device
+          </label>
+          <span data-upload-status role="status" class="field-hint"></span>
+        </div>
+        <label class="block">
+          <span class="field-label">Alt text</span>
+          <input name="cover_image_alt" type="text" maxlength="200" value={values.cover_image_alt} aria-invalid={errors.cover_image_alt ? 'true' : undefined} class="field" />
+          {errors.cover_image_alt && <span class="field-error">{errors.cover_image_alt}</span>}
+        </label>
+        <label class="block">
+          <span class="field-label">Hero crop</span>
+          <input name="hero_position" type="text" maxlength="40" value={values.hero_position} placeholder="center 40%" aria-invalid={errors.hero_position ? 'true' : undefined} class="field sm:max-w-xs" />
+          {errors.hero_position && <span class="field-error">{errors.hero_position}</span>}
+        </label>
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>3. Article</legend>
+    <label class="block">
+      <span class="field-label">Body (HTML)</span>
+      <textarea name="body_html" rows="22" maxlength="100000" aria-invalid={errors.body_html ? 'true' : undefined} class="field font-mono !text-[13px]">{values.body_html}</textarea>
+      <span class="field-hint">
+        Paragraphs (&lt;p&gt;), numbered sections (&lt;ol class="article-list"&gt;) and tick lists (&lt;ul class="tour-highlights"&gt;) are styled by the site.
+        Leave empty to show the post as a card without an article page.
+      </span>
+      {errors.body_html && <span class="field-error">{errors.body_html}</span>}
+    </label>
+    <label class="mt-5 block">
+      <span class="field-label">Meta description</span>
+      <textarea name="seo_description" rows="2" maxlength="160" data-count="160" aria-invalid={errors.seo_description ? 'true' : undefined} class="field">{values.seo_description}</textarea>
+      <span class="field-hint">Shown in search results. <output data-counter class="font-bold">{values.seo_description.length} / 160</output></span>
+      {errors.seo_description && <span class="field-error">{errors.seo_description}</span>}
+    </label>
+  </fieldset>
+
+  <fieldset class={group}>
+    <legend class={`${legend} px-2`}>4. Publishing</legend>
+    <label class="block">
+      <span class="field-label">Status</span>
+      <select name="status" class="field !w-auto" aria-invalid={errors.status ? 'true' : undefined}>
+        <option value="draft" selected={values.status !== 'published'}>Draft (hidden from the public)</option>
+        <option value="published" selected={values.status === 'published'}>Published</option>
+      </select>
+      {errors.status && <span class="field-error">{errors.status}</span>}
+    </label>
+  </fieldset>
+
+  <div class="flex flex-wrap items-center gap-4">
+    <button type="submit" class="btn btn-solid">{submitLabel}</button>
+    <a href="/admin/posts" class="text-link">Cancel</a>
+  </div>
+</form>

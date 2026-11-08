@@ -1,0 +1,59 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import HeroMist from '../components/HeroMist.astro';
+import DarkCta from '../components/DarkCta.astro';
+import { getVisibleVideos } from '../lib/videos-db';
+import { cachePublic } from '../lib/cache';
+
+export const prerender = false;
+cachePublic(Astro);
+
+const videos = await getVisibleVideos();
+---
+
+<SiteLayout
+  title="Videos — Altara"
+  description="Watch Bhutan: festivals, valleys, treks and the people we travel with, from the Altara video channel."
+  image="/assets/images/image/Thimphu festival header2.webp"
+>
+  <section class="hero hero--page hero--center" style="background-image:url('/assets/images/image/Thimphu festival header2.webp');background-position:center 40%;">
+    <div class="hero-content">
+      <h1>Videos</h1>
+    </div>
+    <HeroMist />
+  </section>
+
+  <section class="blog-section reveal">
+    <div class="container">
+      <div class="tour-head">
+        <h2>Watch Bhutan</h2>
+        <p>Festivals, valleys, treks and the people we travel with — straight from our channel.</p>
+      </div>
+      {
+        videos.length === 0 ? (
+          <p class="tour-note">New videos are on their way.</p>
+        ) : (
+          <div class="video-grid">
+            {videos.map((v) => (
+              <figure class="video-card">
+                <div class="video-frame">
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${v.youtube_id}`}
+                    title={v.title}
+                    loading="lazy"
+                    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allowfullscreen
+                  />
+                </div>
+                <figcaption>{v.title}</figcaption>
+              </figure>
+            ))}
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <DarkCta image="/assets/images/image/bumthang view1.webp" />
+</SiteLayout>
