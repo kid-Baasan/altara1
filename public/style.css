@@ -2150,17 +2150,31 @@
        gradient, .tour-gallery-hero, etc.) still use — don't change the
        shared token itself, since that would darken those other sections
        too; this overrides just the footer. */
-    background:var(--color-primary-dark);
-    color:rgba(255,255,255,0.65);
+    background:#0D2C1E; /* Dzong Green, brand guidelines p.14 */
+    color:#fff;
     padding:100px 0 0;
+    position:relative;
+    overflow:hidden;
   }
+  /* Knot-pattern overlay, matched to the brand guidelines (p.24 "Knot
+     pattern"): one gold knot per ~53px tile (39.7pt in the PDF), edge to
+     edge, at ~13% opacity on Dzong Green. Sits under the footer content. */
+  footer::before{
+    content:"";
+    position:absolute;inset:0;
+    background:url('/assets/images/logo/knot-tile.png') 0 0/53px 53px repeat;
+    opacity:0.09;
+    pointer-events:none;
+    z-index:0;
+  }
+  footer > .container{position:relative;z-index:1;}
   .footer-grid{
     display:grid;
     grid-template-columns:1.4fr 1fr 1fr 1fr;
     gap:50px;
     padding-bottom:70px;
   }
-  .footer-brand img{height:38px;margin-bottom:22px;}
+  .footer-brand img{height:84px;margin-bottom:22px;}
   .footer-brand p{max-width:280px;font-size:14px;line-height:1.8;}
   .footer-col h4{
     font-family:var(--font-body);
@@ -2174,7 +2188,7 @@
   .footer-col li{margin-bottom:14px;}
   .footer-col a{
     font-size:14px;
-    color:rgba(255,255,255,0.65);
+    color:#fff;
     transition:color .3s var(--ease);
   }
   .footer-col a:hover{color:var(--color-accent-gold);}
@@ -2188,7 +2202,7 @@
     text-align:center;
     font-size:12px;
     letter-spacing:0.06em;
-    color:rgba(255,255,255,0.45);
+    color:#fff;
   }
 
   @media (max-width:900px){

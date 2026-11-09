@@ -1,5 +1,6 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
+import DarkCta from '../components/DarkCta.astro';
 
 export const prerender = true;
 ---
@@ -98,56 +99,5 @@ export const prerender = true;
     </div>
   </section>
 
-  <!-- ================= TEAM ================= -->
-  <section class="team-section reveal">
-    <div class="container">
-      <div class="team-head">
-        <span class="eyebrow eyebrow--accent">The People Behind Altara</span>
-        <h2>Meet The <span class="gold">Team</span></h2>
-      </div>
-      <div class="team-grid">
-        <div class="team-card">
-          <div class="team-avatar"><span class="team-initials">TW</span></div>
-          <div class="team-name">Tshering Wangmo</div>
-          <span class="team-role">Founder &amp; Lead Journey Designer</span>
-          <p class="team-bio">Born in Thimphu, Tshering has spent fifteen years shaping private itineraries for
-            travelers who want to feel Bhutan, not just see it.</p>
-        </div>
-        <div class="team-card">
-          <div class="team-avatar"><span class="team-initials">KD</span></div>
-          <div class="team-name">Karma Dorji</div>
-          <span class="team-role">Head Of Guiding &amp; Guest Experience</span>
-          <p class="team-bio">A certified trekking guide across every trans-Bhutan trail, Karma leads and trains our
-            on-ground guide network.</p>
-        </div>
-        <div class="team-card">
-          <div class="team-avatar"><span class="team-initials">PC</span></div>
-          <div class="team-name">Pema Choden</div>
-          <span class="team-role">Operations &amp; Logistics</span>
-          <p class="team-bio">Pema keeps every permit, transfer, and reservation quietly perfect &mdash; long before a guest
-            ever notices.</p>
-        </div>
-        <div class="team-card">
-          <div class="team-avatar"><span class="team-initials">ST</span></div>
-          <div class="team-name">Sonam Tenzin</div>
-          <span class="team-role">Guest Relations &amp; Planning</span>
-          <p class="team-bio">Usually the first voice you'll hear &mdash; patient, precise, and always a step ahead of what
-            you need.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ================= DARK CTA ================= -->
-  <section class="dark-cta reveal" id="enquire">
-    <div class="dark-cta-inner">
-      <h2>Begin Your <span class="gold">Journey</span></h2>
-      <p>Share a little about how you'd like to feel, and our team will shape a private Bhutan journey around it — no
-        templates, no packages.</p>
-      <div class="dark-cta-ctas">
-        <a href="/#journeys" class="btn btn-outline-white">View Journeys</a>
-        <a href="#enquire" class="btn btn-solid-gold">Speak To A Planner</a>
-      </div>
-    </div>
-  </section>
+  <DarkCta image="/assets/images/image/Lhuentse dzong.webp" />
 </SiteLayout>
