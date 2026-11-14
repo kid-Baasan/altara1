@@ -2163,7 +2163,7 @@
     content:"";
     position:absolute;inset:0;
     background:url('/assets/images/logo/knot-tile.png') 0 0/53px 53px repeat;
-    opacity:0.09;
+    opacity:0.04;
     pointer-events:none;
     z-index:0;
   }
@@ -3875,3 +3875,62 @@ h1 .gold,h2 .gold,h3 .gold{color:var(--color-accent-gold);}
 /* Mirrored feature layout (media on the right): big photo on the right, second photo overlapping its lower-left. */
 .about--feature.about--reverse .about-media-main{margin-left:auto;}
 .about--feature.about--reverse .about-media-accent{left:0;right:auto;}
+
+/* ===================== ALL TOURS — SIDEBAR FILTER PANEL =====================
+   Filters in a sticky left column, tour cards on the right. The panel is a boxed column with a heading, an
+   underlined search field, a square dropdown and tick-box style lists (Style, Length). Stacks on tablets/phones. */
+.tours-layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:44px;align-items:start;}
+.tours-all .tour-filters{position:sticky;top:110px;z-index:5;margin-bottom:0;padding:0;border-radius:0;border:1px solid var(--color-rule);
+  background:#fff;box-shadow:0 24px 60px -34px rgba(14,21,18,.3);}
+.tour-filters-title{background:var(--color-primary-dark);color:#fff;font-family:var(--font-display);font-size:26px;letter-spacing:.04em;
+  text-transform:uppercase;padding:18px 24px;}
+.tour-filters-title .gold{color:var(--color-accent-gold);}
+.tours-all .tour-filters-bar{display:grid;gap:18px;padding:24px 24px 0;}
+/* search: underline field */
+.tours-all .tour-search{height:auto;padding:0 0 10px;background:transparent;border:0;border-bottom:1px solid var(--color-rule);border-radius:0;box-shadow:none;}
+.tours-all .tour-search:hover{background:transparent;}
+.tours-all .tour-search:focus-within{background:transparent;border-color:var(--color-accent-gold);box-shadow:0 1px 0 var(--color-accent-gold);}
+.tours-all .tour-search input{font-size:14px;}
+.tours-all .tour-search-clear{border-radius:0;}
+/* sort dropdown: square */
+.tours-all .tour-sort{width:100%;}
+.tours-all .tour-dd-btn{width:100%;min-width:0;height:48px;border-radius:0;padding:0 16px;}
+.tours-all .tour-sort select{width:100%;height:48px;border-radius:0;}
+.tours-all .tour-dd-menu{left:0;right:0;border-radius:0;}
+.tours-all .tour-apply{width:100%;height:48px;border-radius:0;}
+/* groups */
+.tours-all .tour-filters-row{display:block;margin:0;padding:8px 24px 6px;border-top:0;}
+.tours-all .tour-filters-group{display:block;padding:20px 0;border-top:1px solid rgba(201,194,176,.6);}
+.tours-all .tour-filters-label{display:block;margin-bottom:12px;color:var(--color-primary-dark);font-size:11px;letter-spacing:.2em;}
+.tours-all .tour-chips,
+.tours-all .tour-filters-group--seg .tour-chips{display:grid;gap:2px;padding:0;background:transparent;border-radius:0;width:100%;overflow:visible;}
+/* each chip is a row: tick box, label, count */
+.tours-all .tour-chip,
+.tours-all .tour-filters-group--seg .tour-chip{display:flex;align-items:center;justify-content:flex-start;gap:12px;width:100%;padding:10px 6px;border:0;border-radius:0;background:transparent;
+  font-size:13.5px;font-weight:500;letter-spacing:.04em;color:var(--color-body);text-align:left;}
+.tours-all .tour-chip::before{content:"";flex:none;width:16px;height:16px;border:1px solid var(--color-rule);background:#fff;
+  transition:background .2s var(--ease),border-color .2s var(--ease),box-shadow .2s var(--ease);}
+.tours-all .tour-chip:hover{background:var(--color-offwhite);}
+.tours-all .tour-chip:hover::before{border-color:var(--color-accent-gold);}
+.tours-all .tour-chip span{margin-left:auto;min-width:0;padding:0;border-radius:0;background:transparent;font-size:12px;color:var(--color-gray-muted);}
+.tours-all .tour-chip.is-active,
+.tours-all .tour-filters-group--seg .tour-chip.is-active{background:transparent;color:var(--color-primary-dark);font-weight:700;}
+.tours-all .tour-chip.is-active::before{background:var(--color-accent-gold);border-color:var(--color-accent-gold);box-shadow:inset 0 0 0 3px #fff;}
+.tours-all .tour-chip.is-active span{background:transparent;color:var(--color-accent-gold-deep);}
+/* result line */
+.tours-all .tour-result-line{display:grid;gap:12px;margin:0;padding:18px 24px 24px;border-top:1px solid rgba(201,194,176,.6);background:var(--color-offwhite);}
+.tours-all .tour-clear{justify-self:start;border-radius:0;}
+/* cards */
+.tours-all .tours-results .tour-grid{grid-template-columns:repeat(3,1fr);}
+@media (max-width:1280px){.tours-all .tours-results .tour-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:900px){
+  .tours-layout{grid-template-columns:1fr;gap:28px;}
+  .tours-all .tour-filters{position:relative;top:auto;}
+}
+@media (max-width:580px){.tours-all .tours-results .tour-grid{grid-template-columns:1fr;}}
+/* ===================== /ALL TOURS — SIDEBAR FILTER PANEL ===================== */
+
+/* Gentle floating motion on the overlapping photo (home About section only). Off for visitors who prefer reduced motion. */
+@keyframes aboutFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-14px);}}
+.about--float .about-media-accent{animation:aboutFloat 5s ease-in-out infinite;will-change:transform;}
+@media (prefers-reduced-motion:reduce){.about--float .about-media-accent{animation:none;}}

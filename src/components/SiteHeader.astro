@@ -37,7 +37,6 @@
           </div>
         </div>
         <a href="/blog">Blog</a>
-        <a href="/gallery">Gallery</a>
       </nav>
       <a href="/" class="logo-link">
         <img id="siteLogo" src="/assets/images/logo/logo-white.svg" alt="Altara">
@@ -45,7 +44,21 @@
       <div class="header-right">
         <nav class="primary-nav nav-right">
           <a href="/">Home</a>
-          <a href="/about">About</a>
+          <div class="nav-item">
+            <a href="/about">About</a>
+            <span class="nav-caret">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </span>
+            <div class="nav-dropdown">
+              <div class="nav-dropdown-panel">
+                <a href="/about">About Us</a>
+                <a href="/gallery">Gallery</a>
+              </div>
+            </div>
+          </div>
           <a href="/enquire" class="nav-cta">Enquire Now</a>
         </nav>
       </div>
@@ -75,9 +88,12 @@
         <a href="/faq">FAQ</a>
       </div>
       <a href="/blog">Blog</a>
-      <a href="/gallery">Gallery</a>
       <a href="/">Home</a>
-      <a href="/about">About</a>
+      <button type="button" class="mobile-nav-toggle" aria-expanded="false">About<span class="nav-caret"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6" /></svg></span></button>
+      <div class="mobile-nav-sub">
+        <a href="/about">About Us</a>
+        <a href="/gallery">Gallery</a>
+      </div>
       <a href="/enquire" class="btn btn-solid-gold">Enquire Now</a>
     </nav>
   </div>
